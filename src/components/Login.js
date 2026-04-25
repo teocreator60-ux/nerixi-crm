@@ -1,27 +1,25 @@
 'use client'
 import { useState, useEffect } from 'react'
 
-const ACCESS_PASSWORD = 'nerixi2026'
-const STORAGE_KEY = 'nerixi-auth'
-
 export function useAuth() {
   const [authed, setAuthed] = useState(null)
 
-  useEffect(() => {
+  const refresh = async () => {
     try {
-      setAuthed(localStorage.getItem(STORAGE_KEY) === 'ok')
+      const res = await fetch('/api/auth/me', { cache: 'no-store' })
+      const data = await res.json()
+      setAuthed(!!data.authed)
     } catch {
       setAuthed(false)
     }
-  }, [])
-
-  const login = () => {
-    try { localStorage.setItem(STORAGE_KEY, 'ok') } catch {}
-    setAuthed(true)
   }
 
-  const logout = () => {
-    try { localStorage.removeItem(STORAGE_KEY) } catch {}
+  useEffect(() => { refresh() }, [])
+
+  const login = () => setAuthed(true)
+
+  const logout = async () => {
+    try { await fetch('/api/auth/logout', { method: 'POST' }) } catch {}
     setAuthed(false)
   }
 
@@ -29,24 +27,32 @@ export function useAuth() {
 }
 
 export default function Login({ onLogin }) {
-  const [email, setEmail] = useState('')
+  const [email, setEmail] = useState('info@nerixi.com')
   const [password, setPassword] = useState('')
   const [showPwd, setShowPwd] = useState(false)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
 
-  const submit = (e) => {
+  const submit = async (e) => {
     e.preventDefault()
     setError('')
     setLoading(true)
-    setTimeout(() => {
-      if (password === ACCESS_PASSWORD) {
+    try {
+      const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      })
+      const data = await res.json()
+      if (res.ok && data.success) {
         onLogin()
       } else {
-        setError('Mot de passe incorrect')
-        setLoading(false)
+        setError(data.error || 'Identifiants invalides')
       }
-    }, 600)
+    } catch {
+      setError('Erreur réseau')
+    }
+    setLoading(false)
   }
 
   return (
@@ -70,7 +76,7 @@ export default function Login({ onLogin }) {
               type="email"
               value={email}
               onChange={e => setEmail(e.target.value)}
-              placeholder="oliverthe@gmail.com"
+              placeholder="info@nerixi.com"
               autoComplete="email"
               required
             />

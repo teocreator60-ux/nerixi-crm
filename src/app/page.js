@@ -1,219 +1,20 @@
 'use client'
-import { useState, useEffect } from 'react'
-import { clients, stats } from '@/lib/clients'
+import { useState, useEffect, useMemo } from 'react'
 import Login, { useAuth } from '@/components/Login'
+import Calendar from '@/components/Calendar'
+import { MRRChart, ClientGrowthChart, StatusBreakdown } from '@/components/Charts'
+import ClientForm from '@/components/ClientForm'
+import PaymentTracking from '@/components/PaymentTracking'
 
 const TABS = [
   { id: 'Dashboard', icon: '📊' },
   { id: 'Clients',   icon: '👥' },
-  { id: 'Paiements', icon: '💳' },
+  { id: 'Agenda',    icon: '📅' },
+  { id: 'Suivi',     icon: '💰', label: 'Suivi paiements' },
+  { id: 'Stripe',    icon: '💳', label: 'Stripe' },
   { id: 'Emails',    icon: '📧' },
   { id: 'LinkedIn',  icon: '💼' },
 ]
-
-const STATUS_LABEL = {
-  succeeded: { label: 'Réussi',   color: '#00e89a', bg: 'rgba(0,200,120,0.14)',  border: 'rgba(0,200,120,0.3)'  },
-  pending:   { label: 'En attente', color: '#fac775', bg: 'rgba(250,199,117,0.14)', border: 'rgba(250,199,117,0.3)' },
-  failed:    { label: 'Échoué',   color: '#ff8a89', bg: 'rgba(226,75,74,0.14)',  border: 'rgba(226,75,74,0.3)'  },
-  refunded:  { label: 'Remboursé', color: '#b89cff', bg: 'rgba(160,130,250,0.14)', border: 'rgba(160,130,250,0.3)' },
-}
-
-function formatMoney(cents, currency = 'eur') {
-  try {
-    return new Intl.NumberFormat('fr-FR', { style: 'currency', currency: currency.toUpperCase() }).format((cents || 0) / 100)
-  } catch {
-    return `${((cents || 0) / 100).toFixed(2)} ${currency.toUpperCase()}`
-  }
-}
-
-function formatDate(unix) {
-  const d = new Date(unix * 1000)
-  return d.toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' }) + ' · ' +
-         d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
-}
-
-function PaiementsView() {
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState('')
-  const [payments, setPayments] = useState([])
-  const [mode, setMode] = useState('demo')
-  const [filter, setFilter] = useState('all')
-
-  const load = async () => {
-    setLoading(true)
-    setError('')
-    try {
-      const res = await fetch('/api/stripe/payments', { cache: 'no-store' })
-      const data = await res.json()
-      if (!res.ok) throw new Error(data.error || 'Erreur')
-      setPayments(data.payments || [])
-      setMode(data.mode || 'demo')
-    } catch (e) {
-      setError(e.message)
-    }
-    setLoading(false)
-  }
-
-  useEffect(() => { load() }, [])
-
-  const filtered = filter === 'all' ? payments : payments.filter(p => p.status === filter)
-
-  const totals = payments.reduce((acc, p) => {
-    if (p.status === 'succeeded') acc.gross += p.amount
-    if (p.status === 'refunded')  acc.refunded += p.amount
-    if (p.status === 'pending')   acc.pending += p.amount
-    return acc
-  }, { gross: 0, refunded: 0, pending: 0 })
-  const net = totals.gross - totals.refunded
-
-  return (
-    <div className="fade-in">
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 30, gap: 16, flexWrap: 'wrap' }}>
-        <div>
-          <h1 style={{ fontSize: 28, fontWeight: 800, letterSpacing: -0.5 }}>Paiements Stripe</h1>
-          <p style={{ color: 'var(--nerixi-muted)', marginTop: 6 }}>
-            {mode === 'live'
-              ? `${payments.length} paiements synchronisés depuis Stripe`
-              : `Mode démo — ajoute STRIPE_SECRET_KEY dans .env.local pour voir tes vrais paiements`}
-          </p>
-        </div>
-        <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
-          <span style={{
-            display: 'inline-flex', alignItems: 'center', gap: 6,
-            background: mode === 'live' ? 'rgba(0,200,120,0.14)' : 'rgba(250,199,117,0.14)',
-            border: `1px solid ${mode === 'live' ? 'rgba(0,200,120,0.3)' : 'rgba(250,199,117,0.3)'}`,
-            color: mode === 'live' ? '#00e89a' : '#fac775',
-            padding: '6px 12px', borderRadius: 999, fontSize: 12, fontWeight: 600
-          }}>
-            <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'currentColor', boxShadow: '0 0 8px currentColor' }} />
-            {mode === 'live' ? 'LIVE' : 'DÉMO'}
-          </span>
-          <button onClick={load} className="btn-secondary" style={{ padding: '8px 16px', fontSize: 13 }}>
-            ↻ Actualiser
-          </button>
-        </div>
-      </div>
-
-      <div className="stagger" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, marginBottom: 28 }}>
-        <StatCard label="Encaissé total"  value={formatMoney(totals.gross)}    sub={`${payments.filter(p => p.status === 'succeeded').length} paiements réussis`} icon="💰" />
-        <StatCard label="Net après remb." value={formatMoney(net)}             sub={`-${formatMoney(totals.refunded)} remboursés`}                                  icon="📈" />
-        <StatCard label="En attente"      value={formatMoney(totals.pending)}  sub={`${payments.filter(p => p.status === 'pending').length} paiements`}            icon="⏳" />
-        <StatCard label="Total transactions" value={payments.length}           sub="Tous statuts confondus"                                                          icon="🧾" />
-      </div>
-
-      <div style={{ display: 'inline-flex', gap: 4, marginBottom: 20, background: 'rgba(10,22,40,0.6)', border: '1px solid var(--nerixi-border)', borderRadius: 12, padding: 4 }}>
-        {[
-          { id: 'all',       label: 'Tous' },
-          { id: 'succeeded', label: 'Réussis' },
-          { id: 'pending',   label: 'En attente' },
-          { id: 'failed',    label: 'Échoués' },
-          { id: 'refunded',  label: 'Remboursés' },
-        ].map(f => (
-          <button key={f.id} onClick={() => setFilter(f.id)}
-            style={{
-              background: filter === f.id ? 'linear-gradient(120deg, var(--nerixi-green), var(--nerixi-accent))' : 'transparent',
-              border: 'none', borderRadius: 8,
-              padding: '7px 16px',
-              color: filter === f.id ? '#06101f' : 'var(--nerixi-muted)',
-              cursor: 'pointer', fontWeight: 600, fontSize: 12.5,
-              transition: 'all 0.2s ease'
-            }}>
-            {f.label}
-          </button>
-        ))}
-      </div>
-
-      {error && (
-        <div className="card fade-in" style={{ borderColor: 'rgba(226,75,74,0.3)', color: '#ff8a89', marginBottom: 16 }}>
-          ⚠ {error}
-        </div>
-      )}
-
-      {loading ? (
-        <div className="card" style={{ textAlign: 'center', padding: 40, color: 'var(--nerixi-muted)' }}>
-          <span className="spinner" style={{ borderTopColor: 'var(--nerixi-green)' }} />
-          <p style={{ marginTop: 12, fontSize: 13 }}>Chargement des paiements…</p>
-        </div>
-      ) : filtered.length === 0 ? (
-        <div className="card" style={{ textAlign: 'center', padding: 40, color: 'var(--nerixi-muted)' }}>
-          <p style={{ fontSize: 32, marginBottom: 8 }}>💳</p>
-          <p>Aucun paiement {filter !== 'all' ? `avec ce statut` : ''}</p>
-        </div>
-      ) : (
-        <div className="card fade-in-up" style={{ padding: 0, overflow: 'hidden' }}>
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: '1.4fr 1.6fr 0.8fr 1fr 0.6fr',
-            padding: '14px 22px',
-            borderBottom: '1px solid var(--nerixi-border)',
-            fontSize: 11,
-            color: 'var(--nerixi-muted)',
-            textTransform: 'uppercase',
-            letterSpacing: 0.6,
-            fontWeight: 600,
-            background: 'rgba(10,22,40,0.4)'
-          }}>
-            <span>Client</span>
-            <span>Description</span>
-            <span style={{ textAlign: 'right' }}>Montant</span>
-            <span>Date</span>
-            <span style={{ textAlign: 'right' }}>Statut</span>
-          </div>
-          {filtered.map((p, i) => {
-            const s = STATUS_LABEL[p.status] || { label: p.status, color: 'var(--nerixi-muted)', bg: 'rgba(255,255,255,0.05)', border: 'var(--nerixi-border)' }
-            return (
-              <div key={p.id}
-                className="fade-in-up"
-                style={{
-                  display: 'grid',
-                  gridTemplateColumns: '1.4fr 1.6fr 0.8fr 1fr 0.6fr',
-                  padding: '14px 22px',
-                  borderBottom: i === filtered.length - 1 ? 'none' : '1px solid var(--nerixi-border)',
-                  fontSize: 13,
-                  alignItems: 'center',
-                  transition: 'background 0.2s ease',
-                  animationDelay: `${Math.min(i * 0.03, 0.4)}s`,
-                }}
-                onMouseEnter={e => e.currentTarget.style.background = 'rgba(0,200,120,0.04)'}
-                onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
-              >
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
-                  <div style={{ width: 30, height: 30, borderRadius: '50%', background: 'linear-gradient(135deg, rgba(0,200,120,0.25), rgba(54,230,196,0.15))', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, color: 'var(--nerixi-accent)', fontSize: 12, flexShrink: 0 }}>
-                    {(p.customer_name || p.customer_email || '?').charAt(0).toUpperCase()}
-                  </div>
-                  <div style={{ minWidth: 0 }}>
-                    <p style={{ fontWeight: 600, fontSize: 13, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.customer_name || '—'}</p>
-                    <p style={{ fontSize: 11, color: 'var(--nerixi-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.customer_email || ''}</p>
-                  </div>
-                </div>
-                <div style={{ minWidth: 0 }}>
-                  <p style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.description}</p>
-                  <p style={{ fontSize: 10.5, color: 'var(--nerixi-muted)', fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace', marginTop: 2 }}>{p.id}</p>
-                </div>
-                <p style={{ textAlign: 'right', fontWeight: 700, color: p.status === 'refunded' || p.status === 'failed' ? 'var(--nerixi-muted)' : 'var(--nerixi-accent)', textDecoration: p.status === 'refunded' ? 'line-through' : 'none' }}>
-                  {formatMoney(p.amount, p.currency)}
-                </p>
-                <p style={{ color: 'var(--nerixi-muted)', fontSize: 12 }}>{formatDate(p.created)}</p>
-                <div style={{ textAlign: 'right' }}>
-                  <span style={{
-                    display: 'inline-block',
-                    background: s.bg,
-                    color: s.color,
-                    border: `1px solid ${s.border}`,
-                    borderRadius: 999,
-                    padding: '3px 10px',
-                    fontSize: 11.5,
-                    fontWeight: 600,
-                  }}>{s.label}</span>
-                </div>
-              </div>
-            )
-          })}
-        </div>
-      )}
-    </div>
-  )
-}
 
 const LINKEDIN_TEMPLATES = [
   {
@@ -331,6 +132,27 @@ const EMAIL_TEMPLATES = [
   }
 ]
 
+const STATUS_LABEL = {
+  succeeded: { label: 'Réussi',   color: '#00e89a', bg: 'rgba(0,200,120,0.14)',  border: 'rgba(0,200,120,0.3)'  },
+  pending:   { label: 'En attente', color: '#fac775', bg: 'rgba(250,199,117,0.14)', border: 'rgba(250,199,117,0.3)' },
+  failed:    { label: 'Échoué',   color: '#ff8a89', bg: 'rgba(226,75,74,0.14)',  border: 'rgba(226,75,74,0.3)'  },
+  refunded:  { label: 'Remboursé', color: '#b89cff', bg: 'rgba(160,130,250,0.14)', border: 'rgba(160,130,250,0.3)' },
+}
+
+function formatMoney(cents, currency = 'eur') {
+  try {
+    return new Intl.NumberFormat('fr-FR', { style: 'currency', currency: currency.toUpperCase() }).format((cents || 0) / 100)
+  } catch {
+    return `${((cents || 0) / 100).toFixed(2)} ${currency.toUpperCase()}`
+  }
+}
+
+function formatDate(unix) {
+  const d = new Date(unix * 1000)
+  return d.toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' }) + ' · ' +
+         d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
+}
+
 function StatCard({ label, value, sub, icon }) {
   return (
     <div className="card fade-in-up" style={{ position: 'relative', overflow: 'hidden' }}>
@@ -345,10 +167,16 @@ function StatCard({ label, value, sub, icon }) {
   )
 }
 
-function ClientCard({ client, onClick }) {
+function ClientCard({ client, onClick, onEdit }) {
   return (
-    <div className="card card-hover fade-in-up" onClick={() => onClick(client)}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 14 }}>
+    <div className="card card-hover fade-in-up" onClick={() => onClick(client)} style={{ position: 'relative' }}>
+      <button onClick={(e) => { e.stopPropagation(); onEdit(client) }}
+        style={{ position: 'absolute', top: 12, right: 12, width: 28, height: 28, borderRadius: 8, background: 'rgba(255,255,255,0.04)', border: '1px solid var(--nerixi-border)', color: 'var(--nerixi-muted)', cursor: 'pointer', fontSize: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.2s ease' }}
+        onMouseEnter={e => { e.currentTarget.style.background = 'rgba(0,200,120,0.15)'; e.currentTarget.style.color = 'var(--nerixi-accent)' }}
+        onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.04)'; e.currentTarget.style.color = 'var(--nerixi-muted)' }}
+        title="Modifier">✎</button>
+
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 14, paddingRight: 36 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           <div style={{ width: 42, height: 42, borderRadius: '50%', background: 'linear-gradient(135deg, rgba(0,200,120,0.25), rgba(54,230,196,0.15))', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, color: 'var(--nerixi-accent)', border: '1px solid var(--nerixi-border)' }}>
             {client.nom.charAt(0)}
@@ -377,7 +205,7 @@ function ClientCard({ client, onClick }) {
   )
 }
 
-function ClientDetail({ client, onClose, onEmail }) {
+function ClientDetail({ client, onClose, onEmail, onEdit }) {
   return (
     <div className="modal-backdrop" onClick={onClose}>
       <div className="card modal-card" onClick={e => e.stopPropagation()}>
@@ -394,7 +222,7 @@ function ClientDetail({ client, onClose, onEmail }) {
           <span className={`badge-${client.statut}`}>{client.statut}</span>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10, marginBottom: 22 }}>
+        <div className="grid-3" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10, marginBottom: 22 }}>
           {[
             { label: 'MRR', value: `${client.mrr}€` },
             { label: 'Installation', value: `${client.installation}€` },
@@ -409,36 +237,45 @@ function ClientDetail({ client, onClose, onEmail }) {
 
         <div style={{ marginBottom: 18 }}>
           <p style={{ fontSize: 11, color: 'var(--nerixi-muted)', marginBottom: 8, textTransform: 'uppercase', letterSpacing: 0.5, fontWeight: 600 }}>Contact</p>
-          <p style={{ fontSize: 14 }}>📧 <a href={`mailto:${client.email}`} style={{ color: 'var(--nerixi-accent)' }}>{client.email}</a></p>
-          <p style={{ fontSize: 14, marginTop: 4 }}>📞 {client.telephone}</p>
+          {client.email && <p style={{ fontSize: 14 }}>📧 <a href={`mailto:${client.email}`} style={{ color: 'var(--nerixi-accent)' }}>{client.email}</a></p>}
+          {client.telephone && <p style={{ fontSize: 14, marginTop: 4 }}>📞 {client.telephone}</p>}
           {client.linkedin && <p style={{ fontSize: 14, marginTop: 4 }}>💼 <a href={client.linkedin} target="_blank" style={{ color: 'var(--nerixi-accent)' }}>Voir profil LinkedIn</a></p>}
         </div>
 
-        <div style={{ marginBottom: 18 }}>
-          <p style={{ fontSize: 11, color: 'var(--nerixi-muted)', marginBottom: 8, textTransform: 'uppercase', letterSpacing: 0.5, fontWeight: 600 }}>Automatisations</p>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-            {client.automatisations.map((a, i) => (
-              <span key={i} style={{ background: 'rgba(0,200,120,0.08)', border: '1px solid var(--nerixi-border)', borderRadius: 999, padding: '5px 12px', fontSize: 12 }}>{a}</span>
-            ))}
+        {client.automatisations?.length > 0 && (
+          <div style={{ marginBottom: 18 }}>
+            <p style={{ fontSize: 11, color: 'var(--nerixi-muted)', marginBottom: 8, textTransform: 'uppercase', letterSpacing: 0.5, fontWeight: 600 }}>Automatisations</p>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+              {client.automatisations.map((a, i) => (
+                <span key={i} style={{ background: 'rgba(0,200,120,0.08)', border: '1px solid var(--nerixi-border)', borderRadius: 999, padding: '5px 12px', fontSize: 12 }}>{a}</span>
+              ))}
+            </div>
           </div>
-        </div>
+        )}
 
-        <div style={{ marginBottom: 18 }}>
-          <p style={{ fontSize: 11, color: 'var(--nerixi-muted)', marginBottom: 8, textTransform: 'uppercase', letterSpacing: 0.5, fontWeight: 600 }}>Notes</p>
-          <p style={{ fontSize: 14, lineHeight: 1.6 }}>{client.notes}</p>
-        </div>
+        {client.notes && (
+          <div style={{ marginBottom: 18 }}>
+            <p style={{ fontSize: 11, color: 'var(--nerixi-muted)', marginBottom: 8, textTransform: 'uppercase', letterSpacing: 0.5, fontWeight: 600 }}>Notes</p>
+            <p style={{ fontSize: 14, lineHeight: 1.6 }}>{client.notes}</p>
+          </div>
+        )}
 
-        <div style={{ background: 'linear-gradient(120deg, rgba(0,200,120,0.12), rgba(54,230,196,0.06))', border: '1px solid var(--nerixi-border)', borderRadius: 12, padding: 14, marginBottom: 22 }}>
-          <p style={{ fontSize: 11, color: 'var(--nerixi-muted)', textTransform: 'uppercase', letterSpacing: 0.5, fontWeight: 600 }}>Prochaine action</p>
-          <p style={{ fontSize: 14, fontWeight: 600, color: 'var(--nerixi-accent)', marginTop: 4 }}>→ {client.prochainAction}</p>
-        </div>
+        {client.prochainAction && (
+          <div style={{ background: 'linear-gradient(120deg, rgba(0,200,120,0.12), rgba(54,230,196,0.06))', border: '1px solid var(--nerixi-border)', borderRadius: 12, padding: 14, marginBottom: 22 }}>
+            <p style={{ fontSize: 11, color: 'var(--nerixi-muted)', textTransform: 'uppercase', letterSpacing: 0.5, fontWeight: 600 }}>Prochaine action</p>
+            <p style={{ fontSize: 14, fontWeight: 600, color: 'var(--nerixi-accent)', marginTop: 4 }}>→ {client.prochainAction}</p>
+          </div>
+        )}
 
-        <div style={{ display: 'flex', gap: 12 }}>
-          <button className="btn-primary" onClick={() => onEmail(client)} style={{ flex: 1 }}>
+        <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+          <button className="btn-primary" onClick={() => onEmail(client)} style={{ flex: 1, minWidth: 130 }}>
             Envoyer un email
           </button>
+          <button onClick={() => onEdit(client)} className="btn-secondary" style={{ flex: 1, minWidth: 130 }}>
+            ✎ Modifier
+          </button>
           {client.linkedin && (
-            <a href={client.linkedin} target="_blank" className="btn-secondary" style={{ flex: 1, textAlign: 'center', textDecoration: 'none' }}>
+            <a href={client.linkedin} target="_blank" className="btn-secondary" style={{ flex: 1, minWidth: 130, textAlign: 'center', textDecoration: 'none' }}>
               LinkedIn
             </a>
           )}
@@ -463,9 +300,9 @@ function EmailModal({ client, onClose }) {
     setContenu(template.contenu
       .replace(/{prenom}/g, prenom)
       .replace(/{mois}/g, mois)
-      .replace(/{nb_automatisations}/g, client.automatisations.length)
+      .replace(/{nb_automatisations}/g, client.automatisations?.length || 0)
       .replace(/{temps_economise}/g, '12')
-      .replace(/{prochaine_action}/g, client.prochainAction)
+      .replace(/{prochaine_action}/g, client.prochainAction || '')
     )
     setSelectedTemplate(template.id)
   }
@@ -539,11 +376,151 @@ function EmailModal({ client, onClose }) {
   )
 }
 
+function StripeView() {
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
+  const [payments, setPayments] = useState([])
+  const [mode, setMode] = useState('demo')
+  const [filter, setFilter] = useState('all')
+
+  const load = async () => {
+    setLoading(true)
+    setError('')
+    try {
+      const res = await fetch('/api/stripe/payments', { cache: 'no-store' })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || 'Erreur')
+      setPayments(data.payments || [])
+      setMode(data.mode || 'demo')
+    } catch (e) { setError(e.message) }
+    setLoading(false)
+  }
+
+  useEffect(() => { load() }, [])
+
+  const filtered = filter === 'all' ? payments : payments.filter(p => p.status === filter)
+  const totals = payments.reduce((acc, p) => {
+    if (p.status === 'succeeded') acc.gross += p.amount
+    if (p.status === 'refunded')  acc.refunded += p.amount
+    if (p.status === 'pending')   acc.pending += p.amount
+    return acc
+  }, { gross: 0, refunded: 0, pending: 0 })
+  const net = totals.gross - totals.refunded
+
+  return (
+    <div className="fade-in">
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 24, gap: 14, flexWrap: 'wrap' }}>
+        <div>
+          <h1 className="h1-page" style={{ fontSize: 28, fontWeight: 800, letterSpacing: -0.5 }}>💳 Paiements Stripe</h1>
+          <p style={{ color: 'var(--nerixi-muted)', marginTop: 6 }}>
+            {mode === 'live' ? `${payments.length} paiements synchronisés` : `Mode démo · ajoute STRIPE_SECRET_KEY`}
+          </p>
+        </div>
+        <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+          <span style={{
+            display: 'inline-flex', alignItems: 'center', gap: 6,
+            background: mode === 'live' ? 'rgba(0,200,120,0.14)' : 'rgba(250,199,117,0.14)',
+            border: `1px solid ${mode === 'live' ? 'rgba(0,200,120,0.3)' : 'rgba(250,199,117,0.3)'}`,
+            color: mode === 'live' ? '#00e89a' : '#fac775',
+            padding: '6px 12px', borderRadius: 999, fontSize: 12, fontWeight: 600
+          }}>
+            <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'currentColor', boxShadow: '0 0 8px currentColor' }} />
+            {mode === 'live' ? 'LIVE' : 'DÉMO'}
+          </span>
+          <button onClick={load} className="btn-secondary" style={{ padding: '8px 16px', fontSize: 13 }}>↻ Actualiser</button>
+        </div>
+      </div>
+
+      <div className="grid-4" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, marginBottom: 24 }}>
+        <StatCard label="Encaissé total"     value={formatMoney(totals.gross)}    sub={`${payments.filter(p => p.status === 'succeeded').length} réussis`} icon="💰" />
+        <StatCard label="Net après remb."    value={formatMoney(net)}             sub={`-${formatMoney(totals.refunded)} remboursés`} icon="📈" />
+        <StatCard label="En attente"         value={formatMoney(totals.pending)}  sub={`${payments.filter(p => p.status === 'pending').length} paiements`} icon="⏳" />
+        <StatCard label="Total transactions" value={payments.length}              sub="Tous statuts" icon="🧾" />
+      </div>
+
+      <div style={{ display: 'inline-flex', gap: 4, marginBottom: 18, background: 'rgba(10,22,40,0.6)', border: '1px solid var(--nerixi-border)', borderRadius: 12, padding: 4, flexWrap: 'wrap' }}>
+        {[
+          { id: 'all',       label: 'Tous' },
+          { id: 'succeeded', label: 'Réussis' },
+          { id: 'pending',   label: 'En attente' },
+          { id: 'failed',    label: 'Échoués' },
+          { id: 'refunded',  label: 'Remboursés' },
+        ].map(f => (
+          <button key={f.id} onClick={() => setFilter(f.id)}
+            style={{
+              background: filter === f.id ? 'linear-gradient(120deg, var(--nerixi-green), var(--nerixi-accent))' : 'transparent',
+              border: 'none', borderRadius: 8, padding: '7px 16px',
+              color: filter === f.id ? '#06101f' : 'var(--nerixi-muted)',
+              cursor: 'pointer', fontWeight: 600, fontSize: 12.5, transition: 'all 0.2s ease'
+            }}>{f.label}</button>
+        ))}
+      </div>
+
+      {error && <div className="card" style={{ borderColor: 'rgba(226,75,74,0.3)', color: '#ff8a89', marginBottom: 16 }}>⚠ {error}</div>}
+
+      {loading ? (
+        <div className="card" style={{ textAlign: 'center', padding: 40, color: 'var(--nerixi-muted)' }}>
+          <span className="spinner" /> <p style={{ marginTop: 12, fontSize: 13 }}>Chargement…</p>
+        </div>
+      ) : filtered.length === 0 ? (
+        <div className="card" style={{ textAlign: 'center', padding: 40, color: 'var(--nerixi-muted)' }}>
+          <p style={{ fontSize: 32, marginBottom: 8 }}>💳</p>
+          <p>Aucun paiement</p>
+        </div>
+      ) : (
+        <div className="card fade-in-up" style={{ padding: 0, overflow: 'hidden' }}>
+          {filtered.map((p, i) => {
+            const s = STATUS_LABEL[p.status] || { label: p.status, color: 'var(--nerixi-muted)', bg: 'rgba(255,255,255,0.05)', border: 'var(--nerixi-border)' }
+            return (
+              <div key={p.id} className="fade-in-up"
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: '1.4fr 1.6fr 0.8fr 0.6fr',
+                  padding: '14px 20px',
+                  borderBottom: i === filtered.length - 1 ? 'none' : '1px solid var(--nerixi-border)',
+                  fontSize: 13, alignItems: 'center', gap: 10,
+                  animationDelay: `${Math.min(i * 0.03, 0.4)}s`,
+                }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
+                  <div style={{ width: 30, height: 30, borderRadius: '50%', background: 'linear-gradient(135deg, rgba(0,200,120,0.25), rgba(54,230,196,0.15))', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, color: 'var(--nerixi-accent)', fontSize: 12, flexShrink: 0 }}>
+                    {(p.customer_name || p.customer_email || '?').charAt(0).toUpperCase()}
+                  </div>
+                  <div style={{ minWidth: 0 }}>
+                    <p style={{ fontWeight: 600, fontSize: 13, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.customer_name || '—'}</p>
+                    <p style={{ fontSize: 11, color: 'var(--nerixi-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.customer_email || formatDate(p.created)}</p>
+                  </div>
+                </div>
+                <div className="table-mobile-hide" style={{ minWidth: 0 }}>
+                  <p style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.description}</p>
+                  <p style={{ fontSize: 10.5, color: 'var(--nerixi-muted)', fontFamily: 'ui-monospace, monospace', marginTop: 2 }}>{p.id}</p>
+                </div>
+                <p style={{ textAlign: 'right', fontWeight: 700, color: p.status === 'refunded' || p.status === 'failed' ? 'var(--nerixi-muted)' : 'var(--nerixi-accent)', textDecoration: p.status === 'refunded' ? 'line-through' : 'none' }}>
+                  {formatMoney(p.amount, p.currency)}
+                </p>
+                <div style={{ textAlign: 'right' }}>
+                  <span style={{
+                    display: 'inline-block',
+                    background: s.bg, color: s.color, border: `1px solid ${s.border}`,
+                    borderRadius: 999, padding: '3px 10px', fontSize: 11.5, fontWeight: 600,
+                  }}>{s.label}</span>
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      )}
+    </div>
+  )
+}
+
 export default function Home() {
   const { authed, login, logout } = useAuth()
   const [activeTab, setActiveTab] = useState('Dashboard')
+  const [sidebarOpen, setSidebarOpen] = useState(false)
   const [selectedClient, setSelectedClient] = useState(null)
   const [emailClient, setEmailClient] = useState(null)
+  const [editingClient, setEditingClient] = useState(null)
+  const [creatingClient, setCreatingClient] = useState(false)
   const [copiedId, setCopiedId] = useState(null)
   const [emailTab, setEmailTab] = useState('templates')
   const [emailTo, setEmailTo] = useState('')
@@ -551,6 +528,39 @@ export default function Home() {
   const [emailContenu, setEmailContenu] = useState('')
   const [sending, setSending] = useState(false)
   const [sent, setSent] = useState(false)
+
+  const [clients, setClients] = useState([])
+  const [events, setEvents] = useState([])
+  const [payments, setPayments] = useState([])
+  const [loadingData, setLoadingData] = useState(true)
+
+  const stats = useMemo(() => ({
+    mrr_total: clients.filter(c => c.statut === 'actif' || c.statut === 'en-cours').reduce((s, c) => s + (Number(c.mrr) || 0), 0),
+    installation_total: clients.reduce((s, c) => s + (Number(c.installation) || 0), 0),
+    clients_actifs: clients.filter(c => c.statut === 'actif').length,
+    clients_en_cours: clients.filter(c => c.statut === 'en-cours').length,
+  }), [clients])
+
+  const refreshData = async () => {
+    try {
+      const [cRes, eRes, pRes] = await Promise.all([
+        fetch('/api/clients', { cache: 'no-store' }),
+        fetch('/api/events',  { cache: 'no-store' }),
+        fetch('/api/payments', { cache: 'no-store' }),
+      ])
+      const c = await cRes.json()
+      const e = await eRes.json()
+      const p = await pRes.json()
+      setClients(c.clients || [])
+      setEvents(e.events || [])
+      setPayments(p.payments || [])
+    } catch (e) {}
+    setLoadingData(false)
+  }
+
+  useEffect(() => {
+    if (authed) refreshData()
+  }, [authed])
 
   const copyToClipboard = (text, id) => {
     navigator.clipboard.writeText(text)
@@ -573,17 +583,59 @@ export default function Home() {
     setSending(false)
   }
 
-  if (authed === null) {
-    return <div style={{ minHeight: '100vh' }} />
+  const handleClientSaved = (saved) => {
+    setClients(prev => {
+      const idx = prev.findIndex(c => c.id === saved.id)
+      if (idx === -1) return [...prev, saved]
+      const next = [...prev]; next[idx] = saved
+      return next
+    })
   }
-  if (!authed) {
-    return <Login onLogin={login} />
+  const handleClientDeleted = (id) => {
+    setClients(prev => prev.filter(c => c.id !== id))
+    setSelectedClient(null)
+  }
+
+  const createEvent = async (payload) => {
+    const res = await fetch('/api/events', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
+    const data = await res.json()
+    if (data.event) setEvents(prev => [...prev, data.event])
+  }
+  const updateEvent = async (id, patch) => {
+    const res = await fetch(`/api/events/${id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(patch) })
+    const data = await res.json()
+    if (data.event) setEvents(prev => prev.map(e => e.id === id ? data.event : e))
+  }
+  const deleteEvent = async (id) => {
+    await fetch(`/api/events/${id}`, { method: 'DELETE' })
+    setEvents(prev => prev.filter(e => e.id !== id))
+  }
+  const togglePayment = async (id, status) => {
+    const res = await fetch('/api/payments', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id, status }) })
+    const data = await res.json()
+    if (data.payment) setPayments(prev => prev.map(p => p.id === id ? data.payment : p))
+  }
+
+  if (authed === null) return <div style={{ minHeight: '100vh' }} />
+  if (!authed) return <Login onLogin={login} />
+
+  const today = new Date().toISOString().slice(0, 10)
+  const todayEvents = events.filter(e => e.date === today && !e.done)
+
+  const handleNavClick = (id) => {
+    setActiveTab(id)
+    setSidebarOpen(false)
   }
 
   return (
     <div style={{ display: 'flex', minHeight: '100vh' }} className="fade-in">
-      {/* Sidebar */}
-      <aside style={{
+      <button className="mobile-toggle" onClick={() => setSidebarOpen(s => !s)} aria-label="Menu">
+        {sidebarOpen ? '✕' : '☰'}
+      </button>
+
+      {sidebarOpen && <div className="sidebar-backdrop" onClick={() => setSidebarOpen(false)} />}
+
+      <aside className={`sidebar ${sidebarOpen ? 'is-open' : ''}`} style={{
         width: 230,
         background: 'linear-gradient(180deg, rgba(17,31,56,0.95), rgba(10,22,40,0.95))',
         borderRight: '1px solid var(--nerixi-border)',
@@ -605,12 +657,12 @@ export default function Home() {
           {TABS.map((tab, i) => (
             <button
               key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
+              onClick={() => handleNavClick(tab.id)}
               className={`tab-btn slide-in-left ${activeTab === tab.id ? 'active' : ''}`}
-              style={{ animationDelay: `${i * 0.05}s` }}
+              style={{ animationDelay: `${i * 0.04}s` }}
             >
               <span style={{ fontSize: 16 }}>{tab.icon}</span>
-              {tab.id}
+              {tab.label || tab.id}
             </button>
           ))}
         </div>
@@ -623,8 +675,7 @@ export default function Home() {
               <p style={{ fontSize: 10.5, color: 'var(--nerixi-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>info@nerixi.com</p>
             </div>
           </div>
-          <button
-            onClick={logout}
+          <button onClick={logout}
             style={{
               width: '100%',
               background: 'transparent',
@@ -645,50 +696,57 @@ export default function Home() {
       </aside>
 
       {/* Main content */}
-      <main style={{ flex: 1, padding: 36, overflowY: 'auto' }} key={activeTab}>
+      <main className="main-content" style={{ flex: 1, padding: 36, overflowY: 'auto', minWidth: 0 }} key={activeTab}>
+
+        {loadingData && (
+          <div style={{ position: 'fixed', top: 12, right: 16, zIndex: 30, fontSize: 11.5, color: 'var(--nerixi-muted)', display: 'flex', alignItems: 'center', gap: 6 }}>
+            <span className="spinner" /> Synchronisation…
+          </div>
+        )}
 
         {/* DASHBOARD */}
         {activeTab === 'Dashboard' && (
           <div className="fade-in">
-            <div style={{ marginBottom: 30 }}>
-              <h1 style={{ fontSize: 28, fontWeight: 800, letterSpacing: -0.5 }}>Tableau de bord</h1>
+            <div style={{ marginBottom: 24 }}>
+              <h1 className="h1-page" style={{ fontSize: 28, fontWeight: 800, letterSpacing: -0.5 }}>Tableau de bord</h1>
               <p style={{ color: 'var(--nerixi-muted)', marginTop: 6 }}>Vue d'ensemble de ton activité Nerixi</p>
             </div>
 
-            <div className="stagger" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16, marginBottom: 30 }}>
-              <StatCard label="MRR Total"     value={`${stats.mrr_total.toLocaleString()}€`}          sub="Revenus récurrents/mois"      icon="💰" />
-              <StatCard label="Trésorerie"    value={`${stats.installation_total.toLocaleString()}€`} sub="Total installations signées" icon="🏦" />
-              <StatCard label="Clients actifs" value={stats.clients_actifs}                            sub={`+ ${stats.clients_en_cours} en cours`} icon="🚀" />
+            {todayEvents.length > 0 && (
+              <div className="card fade-in-up" style={{ marginBottom: 22, background: 'linear-gradient(120deg, rgba(0,200,120,0.12), rgba(54,230,196,0.04))', borderColor: 'rgba(0,200,120,0.3)', display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap' }}>
+                <span style={{ fontSize: 22 }}>🔔</span>
+                <div style={{ flex: 1, minWidth: 200 }}>
+                  <p style={{ fontWeight: 700, fontSize: 14 }}>{todayEvents.length} rappel{todayEvents.length > 1 ? 's' : ''} aujourd'hui</p>
+                  <p style={{ fontSize: 12.5, color: 'var(--nerixi-muted)', marginTop: 2 }}>
+                    {todayEvents.slice(0, 3).map(e => `${e.time} ${e.title}`).join(' · ')}{todayEvents.length > 3 ? ' …' : ''}
+                  </p>
+                </div>
+                <button onClick={() => setActiveTab('Agenda')} className="btn-secondary" style={{ padding: '7px 14px', fontSize: 12 }}>Voir l'agenda</button>
+              </div>
+            )}
+
+            <div className="grid-3" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16, marginBottom: 22 }}>
+              <StatCard label="MRR Total"     value={`${stats.mrr_total.toLocaleString('fr-FR')}€`}          sub="Revenus récurrents/mois"     icon="💰" />
+              <StatCard label="Trésorerie"    value={`${stats.installation_total.toLocaleString('fr-FR')}€`} sub="Total installations signées" icon="🏦" />
+              <StatCard label="Clients actifs" value={stats.clients_actifs}                                   sub={`+ ${stats.clients_en_cours} en cours`} icon="🚀" />
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 16, marginBottom: 22 }}>
+              <MRRChart clients={clients} />
+            </div>
+
+            <div className="grid-2" style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 16, marginBottom: 22 }}>
+              <ClientGrowthChart clients={clients} />
+              <StatusBreakdown clients={clients} />
             </div>
 
             <div style={{ marginBottom: 22 }}>
               <h2 style={{ fontSize: 16, fontWeight: 700, marginBottom: 16 }}>Clients récents</h2>
-              <div className="stagger" style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 16 }}>
+              <div className="grid-2 stagger" style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 16 }}>
                 {clients.slice(0, 4).map(c => (
-                  <ClientCard key={c.id} client={c} onClick={setSelectedClient} />
+                  <ClientCard key={c.id} client={c} onClick={setSelectedClient} onEdit={setEditingClient} />
                 ))}
               </div>
-            </div>
-
-            <div className="card fade-in-up" style={{ marginTop: 22 }}>
-              <h2 style={{ fontSize: 15, fontWeight: 700, marginBottom: 16 }}>Prochaines actions</h2>
-              {clients.map((c, i) => (
-                <div
-                  key={c.id}
-                  style={{
-                    display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                    padding: '12px 0',
-                    borderBottom: i === clients.length - 1 ? 'none' : '1px solid var(--nerixi-border)',
-                    transition: 'transform 0.2s ease',
-                  }}
-                >
-                  <div>
-                    <p style={{ fontSize: 14, fontWeight: 500 }}>{c.nom}</p>
-                    <p style={{ fontSize: 12.5, color: 'var(--nerixi-muted)', marginTop: 2 }}>{c.prochainAction}</p>
-                  </div>
-                  <span className={`badge-${c.statut}`}>{c.statut}</span>
-                </div>
-              ))}
             </div>
           </div>
         )}
@@ -696,40 +754,63 @@ export default function Home() {
         {/* CLIENTS */}
         {activeTab === 'Clients' && (
           <div className="fade-in">
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 30 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24, gap: 12, flexWrap: 'wrap' }}>
               <div>
-                <h1 style={{ fontSize: 28, fontWeight: 800, letterSpacing: -0.5 }}>Clients</h1>
-                <p style={{ color: 'var(--nerixi-muted)', marginTop: 6 }}>{clients.length} clients — Clique pour voir le détail</p>
+                <h1 className="h1-page" style={{ fontSize: 28, fontWeight: 800, letterSpacing: -0.5 }}>Clients</h1>
+                <p style={{ color: 'var(--nerixi-muted)', marginTop: 6 }}>{clients.length} clients · clique pour voir le détail, ✎ pour modifier</p>
               </div>
+              <button className="btn-primary" onClick={() => setCreatingClient(true)}>+ Nouveau client</button>
             </div>
-            <div className="stagger" style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 16 }}>
-              {clients.map(c => <ClientCard key={c.id} client={c} onClick={setSelectedClient} />)}
+            <div className="grid-2 stagger" style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 16 }}>
+              {clients.map(c => <ClientCard key={c.id} client={c} onClick={setSelectedClient} onEdit={setEditingClient} />)}
             </div>
+            {clients.length === 0 && !loadingData && (
+              <div className="card" style={{ textAlign: 'center', padding: 40, color: 'var(--nerixi-muted)' }}>
+                <p style={{ fontSize: 32, marginBottom: 8 }}>👥</p>
+                <p>Aucun client pour l'instant.</p>
+                <button className="btn-primary" onClick={() => setCreatingClient(true)} style={{ marginTop: 16 }}>+ Créer le premier client</button>
+              </div>
+            )}
           </div>
         )}
 
-        {/* PAIEMENTS */}
-        {activeTab === 'Paiements' && <PaiementsView />}
+        {/* AGENDA */}
+        {activeTab === 'Agenda' && (
+          <Calendar
+            events={events}
+            clients={clients}
+            onCreate={createEvent}
+            onUpdate={updateEvent}
+            onDelete={deleteEvent}
+          />
+        )}
+
+        {/* SUIVI PAIEMENTS */}
+        {activeTab === 'Suivi' && (
+          <PaymentTracking
+            clients={clients}
+            payments={payments}
+            onTogglePayment={togglePayment}
+          />
+        )}
+
+        {/* STRIPE */}
+        {activeTab === 'Stripe' && <StripeView />}
 
         {/* EMAILS */}
         {activeTab === 'Emails' && (
           <div className="fade-in">
-            <h1 style={{ fontSize: 28, fontWeight: 800, marginBottom: 8, letterSpacing: -0.5 }}>Emails Brevo</h1>
-            <p style={{ color: 'var(--nerixi-muted)', marginBottom: 28 }}>Envoie des emails à tes clients via Brevo</p>
+            <h1 className="h1-page" style={{ fontSize: 28, fontWeight: 800, marginBottom: 8, letterSpacing: -0.5 }}>📧 Emails</h1>
+            <p style={{ color: 'var(--nerixi-muted)', marginBottom: 22 }}>Envoie des emails à tes clients via Brevo</p>
 
-            <div style={{ display: 'inline-flex', gap: 4, marginBottom: 24, background: 'rgba(10,22,40,0.6)', border: '1px solid var(--nerixi-border)', borderRadius: 12, padding: 4 }}>
+            <div style={{ display: 'inline-flex', gap: 4, marginBottom: 22, background: 'rgba(10,22,40,0.6)', border: '1px solid var(--nerixi-border)', borderRadius: 12, padding: 4 }}>
               {['templates', 'composer'].map(t => (
                 <button key={t} onClick={() => setEmailTab(t)}
                   style={{
                     background: emailTab === t ? 'linear-gradient(120deg, var(--nerixi-green), var(--nerixi-accent))' : 'transparent',
-                    border: 'none',
-                    borderRadius: 8,
-                    padding: '8px 22px',
+                    border: 'none', borderRadius: 8, padding: '8px 22px',
                     color: emailTab === t ? '#06101f' : 'var(--nerixi-muted)',
-                    cursor: 'pointer',
-                    fontWeight: 600,
-                    fontSize: 13,
-                    transition: 'all 0.2s ease'
+                    cursor: 'pointer', fontWeight: 600, fontSize: 13, transition: 'all 0.2s ease'
                   }}>
                   {t === 'templates' ? 'Templates' : 'Composer'}
                 </button>
@@ -740,7 +821,7 @@ export default function Home() {
               <div className="stagger" style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
                 {EMAIL_TEMPLATES.map(t => (
                   <div key={t.id} className="card card-hover fade-in-up">
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12, gap: 8, flexWrap: 'wrap' }}>
                       <p style={{ fontWeight: 700 }}>{t.titre}</p>
                       <p style={{ fontSize: 12, color: 'var(--nerixi-muted)' }}>{t.sujet}</p>
                     </div>
@@ -779,13 +860,13 @@ export default function Home() {
         {/* LINKEDIN */}
         {activeTab === 'LinkedIn' && (
           <div className="fade-in">
-            <h1 style={{ fontSize: 28, fontWeight: 800, marginBottom: 8, letterSpacing: -0.5 }}>LinkedIn</h1>
-            <p style={{ color: 'var(--nerixi-muted)', marginBottom: 28 }}>Templates de publications LinkedIn prêts à copier-coller</p>
+            <h1 className="h1-page" style={{ fontSize: 28, fontWeight: 800, marginBottom: 8, letterSpacing: -0.5 }}>💼 LinkedIn</h1>
+            <p style={{ color: 'var(--nerixi-muted)', marginBottom: 22 }}>Templates de publications LinkedIn prêts à copier-coller</p>
 
             <div className="stagger" style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
               {LINKEDIN_TEMPLATES.map(t => (
                 <div key={t.id} className="card fade-in-up">
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, gap: 8, flexWrap: 'wrap' }}>
                     <p style={{ fontWeight: 700, fontSize: 15 }}>{t.titre}</p>
                     <button onClick={() => copyToClipboard(t.contenu, t.id)}
                       style={{
@@ -809,16 +890,31 @@ export default function Home() {
         )}
       </main>
 
-      {/* Modals */}
       {selectedClient && (
         <ClientDetail
           client={selectedClient}
           onClose={() => setSelectedClient(null)}
           onEmail={(c) => { setSelectedClient(null); setEmailClient(c) }}
+          onEdit={(c) => { setSelectedClient(null); setEditingClient(c) }}
         />
       )}
       {emailClient && (
         <EmailModal client={emailClient} onClose={() => setEmailClient(null)} />
+      )}
+      {editingClient && (
+        <ClientForm
+          client={editingClient}
+          onClose={() => setEditingClient(null)}
+          onSaved={handleClientSaved}
+          onDeleted={handleClientDeleted}
+        />
+      )}
+      {creatingClient && (
+        <ClientForm
+          client={null}
+          onClose={() => setCreatingClient(false)}
+          onSaved={handleClientSaved}
+        />
       )}
     </div>
   )
