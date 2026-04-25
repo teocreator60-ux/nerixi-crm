@@ -5,10 +5,15 @@ import Calendar from '@/components/Calendar'
 import { MRRChart, ClientGrowthChart, StatusBreakdown } from '@/components/Charts'
 import ClientForm from '@/components/ClientForm'
 import PaymentTracking from '@/components/PaymentTracking'
+import CommandPalette from '@/components/CommandPalette'
+import Kanban from '@/components/Kanban'
+import { AtRiskPanel, HealthGauge, ClientHealthCard } from '@/components/HealthScore'
+import ClientTimeline from '@/components/ClientTimeline'
 
 const TABS = [
   { id: 'Dashboard', icon: '📊' },
   { id: 'Clients',   icon: '👥' },
+  { id: 'Kanban',    icon: '🎯' },
   { id: 'Agenda',    icon: '📅' },
   { id: 'Suivi',     icon: '💰', label: 'Suivi paiements' },
   { id: 'Stripe',    icon: '💳', label: 'Stripe' },
@@ -168,6 +173,7 @@ function StatCard({ label, value, sub, icon }) {
 }
 
 function ClientCard({ client, onClick, onEdit }) {
+  const onb = client.onboarding
   return (
     <div className="card card-hover fade-in-up" onClick={() => onClick(client)} style={{ position: 'relative' }}>
       <button onClick={(e) => { e.stopPropagation(); onEdit(client) }}
@@ -182,7 +188,10 @@ function ClientCard({ client, onClick, onEdit }) {
             {client.nom.charAt(0)}
           </div>
           <div>
-            <p style={{ fontWeight: 600, fontSize: 15 }}>{client.nom}</p>
+            <p style={{ fontWeight: 600, fontSize: 15, display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+              {client.nom}
+              {onb?.status === 'sent' && <span title={`Onboarding lancé · ${new Date(onb.triggeredAt).toLocaleDateString('fr-FR')}`} style={{ fontSize: 11 }}>🚀</span>}
+            </p>
             <p style={{ fontSize: 12.5, color: 'var(--nerixi-muted)' }}>{client.entreprise}</p>
           </div>
         </div>
@@ -205,7 +214,29 @@ function ClientCard({ client, onClick, onEdit }) {
   )
 }
 
-function ClientDetail({ client, onClose, onEmail, onEdit }) {
+function ClientDetail({ client, onClose, onEmail, onEdit, onOnboarding, onTimeline, stripePayments, events }) {
+  const [onboardingState, setOnboardingState] = useState({ loading: false, error: '', success: false })
+
+  const triggerOnboarding = async () => {
+    setOnboardingState({ loading: true, error: '', success: false })
+    try {
+      const res = await fetch('/api/onboarding/trigger', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ clientId: client.id, triggeredBy: 'manual' }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || 'Erreur n8n')
+      setOnboardingState({ loading: false, error: '', success: true })
+      if (data.client) onOnboarding?.(data.client)
+      setTimeout(() => setOnboardingState(s => ({ ...s, success: false })), 4000)
+    } catch (e) {
+      setOnboardingState({ loading: false, error: e.message, success: false })
+    }
+  }
+
+  const onb = client.onboarding
+
   return (
     <div className="modal-backdrop" onClick={onClose}>
       <div className="card modal-card" onClick={e => e.stopPropagation()}>
@@ -222,7 +253,7 @@ function ClientDetail({ client, onClose, onEmail, onEdit }) {
           <span className={`badge-${client.statut}`}>{client.statut}</span>
         </div>
 
-        <div className="grid-3" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10, marginBottom: 22 }}>
+        <div className="grid-3" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10, marginBottom: 18 }}>
           {[
             { label: 'MRR', value: `${client.mrr}€` },
             { label: 'Installation', value: `${client.installation}€` },
@@ -233,6 +264,10 @@ function ClientDetail({ client, onClose, onEmail, onEdit }) {
               <p style={{ fontSize: 20, fontWeight: 700, color: 'var(--nerixi-accent)', marginTop: 4 }}>{it.value}</p>
             </div>
           ))}
+        </div>
+
+        <div style={{ marginBottom: 18 }}>
+          <ClientHealthCard client={client} stripePayments={stripePayments || []} events={events || []} />
         </div>
 
         <div style={{ marginBottom: 18 }}>
@@ -261,11 +296,41 @@ function ClientDetail({ client, onClose, onEmail, onEdit }) {
         )}
 
         {client.prochainAction && (
-          <div style={{ background: 'linear-gradient(120deg, rgba(0,200,120,0.12), rgba(54,230,196,0.06))', border: '1px solid var(--nerixi-border)', borderRadius: 12, padding: 14, marginBottom: 22 }}>
+          <div style={{ background: 'linear-gradient(120deg, rgba(0,200,120,0.12), rgba(54,230,196,0.06))', border: '1px solid var(--nerixi-border)', borderRadius: 12, padding: 14, marginBottom: 18 }}>
             <p style={{ fontSize: 11, color: 'var(--nerixi-muted)', textTransform: 'uppercase', letterSpacing: 0.5, fontWeight: 600 }}>Prochaine action</p>
             <p style={{ fontSize: 14, fontWeight: 600, color: 'var(--nerixi-accent)', marginTop: 4 }}>→ {client.prochainAction}</p>
           </div>
         )}
+
+        <div style={{ background: 'rgba(10,22,40,0.6)', border: '1px solid var(--nerixi-border)', borderRadius: 12, padding: 14, marginBottom: 22 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10, gap: 10, flexWrap: 'wrap' }}>
+            <div>
+              <p style={{ fontSize: 11, color: 'var(--nerixi-muted)', textTransform: 'uppercase', letterSpacing: 0.5, fontWeight: 600 }}>🚀 Onboarding · n8n</p>
+              {onb?.status === 'sent' ? (
+                <p style={{ fontSize: 12.5, color: 'var(--nerixi-accent)', marginTop: 4 }}>
+                  Lancé le {new Date(onb.triggeredAt).toLocaleString('fr-FR', { dateStyle: 'short', timeStyle: 'short' })}
+                </p>
+              ) : onb?.status === 'failed' ? (
+                <p style={{ fontSize: 12.5, color: '#ff8a89', marginTop: 4 }}>Dernière tentative échouée — {onb.error}</p>
+              ) : (
+                <p style={{ fontSize: 12.5, color: 'var(--nerixi-muted)', marginTop: 4 }}>Pas encore déclenché</p>
+              )}
+            </div>
+            <button onClick={triggerOnboarding} disabled={onboardingState.loading}
+              style={{
+                background: onb?.status === 'sent' ? 'rgba(10,22,40,0.6)' : 'linear-gradient(120deg, var(--nerixi-green), var(--nerixi-accent))',
+                border: onb?.status === 'sent' ? '1px solid var(--nerixi-border)' : 'none',
+                color: onb?.status === 'sent' ? 'var(--nerixi-text)' : '#06101f',
+                borderRadius: 10, padding: '9px 16px', fontWeight: 700, fontSize: 13, cursor: 'pointer',
+                opacity: onboardingState.loading ? 0.6 : 1,
+                transition: 'all 0.2s ease'
+              }}>
+              {onboardingState.loading ? <><span className="spinner" /> &nbsp;Envoi…</> : (onb?.status === 'sent' ? '↻ Relancer' : 'Lancer l\'onboarding')}
+            </button>
+          </div>
+          {onboardingState.success && <p className="fade-in" style={{ fontSize: 12, color: 'var(--nerixi-accent)' }}>✅ Workflow n8n déclenché avec succès</p>}
+          {onboardingState.error && <p className="fade-in" style={{ fontSize: 12, color: '#ff8a89' }}>⚠ {onboardingState.error}</p>}
+        </div>
 
         <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
           <button className="btn-primary" onClick={() => onEmail(client)} style={{ flex: 1, minWidth: 130 }}>
@@ -273,6 +338,9 @@ function ClientDetail({ client, onClose, onEmail, onEdit }) {
           </button>
           <button onClick={() => onEdit(client)} className="btn-secondary" style={{ flex: 1, minWidth: 130 }}>
             ✎ Modifier
+          </button>
+          <button onClick={() => onTimeline?.(client)} className="btn-secondary" style={{ flex: 1, minWidth: 130 }}>
+            🎬 Timeline 360°
           </button>
           {client.linkedin && (
             <a href={client.linkedin} target="_blank" className="btn-secondary" style={{ flex: 1, minWidth: 130, textAlign: 'center', textDecoration: 'none' }}>
@@ -504,6 +572,8 @@ export default function Home() {
   const [emailClient, setEmailClient] = useState(null)
   const [editingClient, setEditingClient] = useState(null)
   const [creatingClient, setCreatingClient] = useState(false)
+  const [timelineClient, setTimelineClient] = useState(null)
+  const [paletteOpen, setPaletteOpen] = useState(false)
   const [copiedId, setCopiedId] = useState(null)
   const [emailTab, setEmailTab] = useState('templates')
   const [emailTo, setEmailTo] = useState('')
@@ -555,6 +625,34 @@ export default function Home() {
   useEffect(() => {
     if (authed) refreshData()
   }, [authed])
+
+  useEffect(() => {
+    if (!authed) return
+    const handler = (e) => {
+      const isMod = e.metaKey || e.ctrlKey
+      if (isMod && (e.key === 'k' || e.key === 'K')) {
+        e.preventDefault()
+        setPaletteOpen(o => !o)
+      }
+    }
+    window.addEventListener('keydown', handler)
+    return () => window.removeEventListener('keydown', handler)
+  }, [authed])
+
+  const changeClientStatus = async (client, newStatus) => {
+    setClients(prev => prev.map(c => c.id === client.id ? { ...c, statut: newStatus } : c))
+    try {
+      const res = await fetch(`/api/clients/${client.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...client, statut: newStatus }),
+      })
+      const data = await res.json()
+      if (data.client) handleClientSaved(data.client)
+    } catch {
+      setClients(prev => prev.map(c => c.id === client.id ? { ...c, statut: client.statut } : c))
+    }
+  }
 
   const copyToClipboard = (text, id) => {
     navigator.clipboard.writeText(text)
@@ -656,6 +754,27 @@ export default function Home() {
           ))}
         </div>
 
+        <button onClick={() => setPaletteOpen(true)}
+          style={{
+            margin: '12px 16px 0', padding: '8px 12px',
+            background: 'rgba(0,200,120,0.06)',
+            border: '1px solid var(--nerixi-border)',
+            borderRadius: 10,
+            color: 'var(--nerixi-muted)',
+            cursor: 'pointer',
+            fontSize: 12,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            transition: 'all 0.2s ease',
+          }}
+          onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--nerixi-green)'; e.currentTarget.style.color = 'var(--nerixi-text)' }}
+          onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--nerixi-border)'; e.currentTarget.style.color = 'var(--nerixi-muted)' }}
+          title="Ouvrir la palette de commandes">
+          <span>⌕ Recherche rapide</span>
+          <span style={{ fontFamily: 'ui-monospace, Menlo, monospace', fontSize: 10.5, background: 'rgba(255,255,255,0.05)', padding: '1px 6px', borderRadius: 4 }}>⌘K</span>
+        </button>
+
         <div style={{ marginTop: 'auto', padding: '18px 22px', borderTop: '1px solid var(--nerixi-border)' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
             <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'linear-gradient(135deg, var(--nerixi-green), var(--nerixi-accent-2))', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 700, color: '#06101f' }}>T</div>
@@ -729,13 +848,17 @@ export default function Home() {
               <StatusBreakdown clients={clients} />
             </div>
 
-            <div style={{ marginBottom: 22 }}>
-              <h2 style={{ fontSize: 16, fontWeight: 700, marginBottom: 16 }}>Clients récents</h2>
-              <div className="grid-2 stagger" style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 16 }}>
-                {clients.slice(0, 4).map(c => (
-                  <ClientCard key={c.id} client={c} onClick={setSelectedClient} onEdit={setEditingClient} />
-                ))}
+            <div className="grid-2" style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr', gap: 16, marginBottom: 22 }}>
+              <div>
+                <h2 style={{ fontSize: 16, fontWeight: 700, marginBottom: 16 }}>Clients récents</h2>
+                <div className="grid-2 stagger" style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 16 }}>
+                  {clients.slice(0, 4).map(c => (
+                    <ClientCard key={c.id} client={c} onClick={setSelectedClient} onEdit={setEditingClient} />
+                  ))}
+                </div>
               </div>
+              <AtRiskPanel clients={clients} stripePayments={stripePayments} events={events}
+                onSelect={setSelectedClient} />
             </div>
           </div>
         )}
@@ -761,6 +884,16 @@ export default function Home() {
               </div>
             )}
           </div>
+        )}
+
+        {/* KANBAN */}
+        {activeTab === 'Kanban' && (
+          <Kanban
+            clients={clients}
+            onChangeStatus={changeClientStatus}
+            onOpenClient={setSelectedClient}
+            onTimeline={setTimelineClient}
+          />
         )}
 
         {/* AGENDA */}
@@ -888,12 +1021,33 @@ export default function Home() {
 
       {selectedClient && (
         <ClientDetail
-          client={selectedClient}
+          client={clients.find(c => c.id === selectedClient.id) || selectedClient}
           onClose={() => setSelectedClient(null)}
           onEmail={(c) => { setSelectedClient(null); setEmailClient(c) }}
           onEdit={(c) => { setSelectedClient(null); setEditingClient(c) }}
+          onOnboarding={(c) => { handleClientSaved(c); setSelectedClient(c) }}
+          onTimeline={(c) => { setSelectedClient(null); setTimelineClient(c) }}
+          stripePayments={stripePayments}
+          events={events}
         />
       )}
+      {timelineClient && (
+        <ClientTimeline
+          client={clients.find(c => c.id === timelineClient.id) || timelineClient}
+          onClose={() => setTimelineClient(null)}
+          stripePayments={stripePayments}
+          events={events}
+        />
+      )}
+      <CommandPalette
+        open={paletteOpen}
+        onClose={() => setPaletteOpen(false)}
+        ctx={{
+          clients, setActiveTab, setSelectedClient, setCreatingClient,
+          setEmailClient, setTimelineClient,
+          refreshStripe, refreshAll: refreshData, logout,
+        }}
+      />
       {emailClient && (
         <EmailModal client={emailClient} onClose={() => setEmailClient(null)} />
       )}

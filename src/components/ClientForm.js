@@ -39,6 +39,7 @@ export default function ClientForm({ client, onClose, onSaved, onDeleted }) {
   const [saving, setSaving] = useState(false)
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [error, setError] = useState('')
+  const [autoOnboard, setAutoOnboard] = useState(false)
   const isEdit = !!client?.id
 
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }))
@@ -69,7 +70,21 @@ export default function ClientForm({ client, onClose, onSaved, onDeleted }) {
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || 'Erreur')
-      onSaved?.(data.client)
+      let savedClient = data.client
+
+      if (!isEdit && autoOnboard && savedClient?.id) {
+        try {
+          const obRes = await fetch('/api/onboarding/trigger', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ clientId: savedClient.id, triggeredBy: 'auto_on_create' }),
+          })
+          const obData = await obRes.json()
+          if (obData.client) savedClient = obData.client
+        } catch {}
+      }
+
+      onSaved?.(savedClient)
       onClose()
     } catch (e) {
       setError(e.message)
@@ -180,6 +195,23 @@ export default function ClientForm({ client, onClose, onSaved, onDeleted }) {
             <label>Notes</label>
             <textarea rows={3} value={form.notes} onChange={e => set('notes', e.target.value)} placeholder="Notes internes..." />
           </div>
+
+          {!isEdit && (
+            <label style={{
+              display: 'flex', alignItems: 'center', gap: 10,
+              background: 'rgba(0,200,120,0.06)',
+              border: '1px solid var(--nerixi-border)',
+              borderRadius: 10, padding: '10px 12px',
+              marginBottom: 14, cursor: 'pointer',
+              textTransform: 'none', letterSpacing: 0,
+            }}>
+              <input type="checkbox" checked={autoOnboard} onChange={e => setAutoOnboard(e.target.checked)}
+                style={{ width: 16, height: 16, accentColor: 'var(--nerixi-green)', cursor: 'pointer' }} />
+              <span style={{ color: 'var(--nerixi-text)', fontSize: 13, fontWeight: 500 }}>
+                🚀 Déclencher l'onboarding n8n automatiquement après la création
+              </span>
+            </label>
+          )}
 
           {error && <p className="fade-in" style={{ color: '#ff8a89', fontSize: 13, marginBottom: 12 }}>⚠ {error}</p>}
 

@@ -44,7 +44,14 @@ function defaultStore() {
   const clients = JSON.parse(JSON.stringify(seedClients))
   const payments = clients.flatMap(genPaymentHistory)
   const events = defaultEvents(clients)
-  return { clients, payments, events, nextClientId: Math.max(...clients.map(c => c.id)) + 1 }
+  const activities = clients.map(c => ({
+    id: `act_seed_${c.id}`,
+    ts: new Date(c.dateDebut + 'T09:00:00').toISOString(),
+    clientId: c.id,
+    type: 'client_created',
+    payload: { entreprise: c.entreprise },
+  }))
+  return { clients, payments, events, activities, nextClientId: Math.max(...clients.map(c => c.id)) + 1 }
 }
 
 function readStore() {
@@ -104,6 +111,14 @@ export function createClient(payload) {
   }
   store.clients.push(client)
   store.nextClientId = id + 1
+  store.activities = store.activities || []
+  store.activities.push({
+    id: `act_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+    ts: new Date().toISOString(),
+    clientId: id,
+    type: 'client_created',
+    payload: { entreprise: client.entreprise, statut: client.statut },
+  })
   writeStore(store)
   return client
 }
@@ -124,8 +139,18 @@ export function updateClient(id, patch) {
     tags: Array.isArray(patch.tags) ? patch.tags : cur.tags,
   }
   store.clients[idx] = next
+  store.activities = store.activities || []
+  if (patch.statut && patch.statut !== cur.statut) {
+    store.activities.push({
+      id: `act_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+      ts: new Date().toISOString(),
+      clientId: cur.id,
+      type: 'status_changed',
+      payload: { from: cur.statut, to: patch.statut },
+    })
+  }
   writeStore(store)
-  return next
+  return { client: next, statusChanged: patch.statut && patch.statut !== cur.statut, previousStatus: cur.statut }
 }
 
 export function deleteClient(id) {
@@ -180,6 +205,28 @@ export function deleteEvent(id) {
 
 export function getPayments() {
   return readStore().payments || []
+}
+
+export function logActivity(entry) {
+  const store = readStore()
+  store.activities = store.activities || []
+  const activity = {
+    id: `act_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+    ts: entry.ts || new Date().toISOString(),
+    clientId: entry.clientId != null ? Number(entry.clientId) : null,
+    type: entry.type,
+    payload: entry.payload || {},
+  }
+  store.activities.push(activity)
+  if (store.activities.length > 5000) store.activities = store.activities.slice(-5000)
+  writeStore(store)
+  return activity
+}
+
+export function getActivities(clientId) {
+  const acts = readStore().activities || []
+  if (clientId != null) return acts.filter(a => a.clientId === Number(clientId))
+  return acts
 }
 
 export function setPaymentStatus(paymentId, status) {
