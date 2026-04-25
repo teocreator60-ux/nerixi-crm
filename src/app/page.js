@@ -376,27 +376,14 @@ function EmailModal({ client, onClose }) {
   )
 }
 
-function StripeView() {
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState('')
-  const [payments, setPayments] = useState([])
-  const [mode, setMode] = useState('demo')
+function StripeView({ payments, mode, onRefresh }) {
   const [filter, setFilter] = useState('all')
+  const [refreshing, setRefreshing] = useState(false)
 
   const load = async () => {
-    setLoading(true)
-    setError('')
-    try {
-      const res = await fetch('/api/stripe/payments', { cache: 'no-store' })
-      const data = await res.json()
-      if (!res.ok) throw new Error(data.error || 'Erreur')
-      setPayments(data.payments || [])
-      setMode(data.mode || 'demo')
-    } catch (e) { setError(e.message) }
-    setLoading(false)
+    setRefreshing(true)
+    try { await onRefresh?.() } finally { setRefreshing(false) }
   }
-
-  useEffect(() => { load() }, [])
 
   const filtered = filter === 'all' ? payments : payments.filter(p => p.status === filter)
   const totals = payments.reduce((acc, p) => {
@@ -427,7 +414,9 @@ function StripeView() {
             <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'currentColor', boxShadow: '0 0 8px currentColor' }} />
             {mode === 'live' ? 'LIVE' : 'DÉMO'}
           </span>
-          <button onClick={load} className="btn-secondary" style={{ padding: '8px 16px', fontSize: 13 }}>↻ Actualiser</button>
+          <button onClick={load} className="btn-secondary" disabled={refreshing} style={{ padding: '8px 16px', fontSize: 13 }}>
+            {refreshing ? <><span className="spinner" /> &nbsp;Sync…</> : '↻ Actualiser'}
+          </button>
         </div>
       </div>
 
@@ -456,13 +445,7 @@ function StripeView() {
         ))}
       </div>
 
-      {error && <div className="card" style={{ borderColor: 'rgba(226,75,74,0.3)', color: '#ff8a89', marginBottom: 16 }}>⚠ {error}</div>}
-
-      {loading ? (
-        <div className="card" style={{ textAlign: 'center', padding: 40, color: 'var(--nerixi-muted)' }}>
-          <span className="spinner" /> <p style={{ marginTop: 12, fontSize: 13 }}>Chargement…</p>
-        </div>
-      ) : filtered.length === 0 ? (
+      {filtered.length === 0 ? (
         <div className="card" style={{ textAlign: 'center', padding: 40, color: 'var(--nerixi-muted)' }}>
           <p style={{ fontSize: 32, marginBottom: 8 }}>💳</p>
           <p>Aucun paiement</p>
@@ -531,7 +514,8 @@ export default function Home() {
 
   const [clients, setClients] = useState([])
   const [events, setEvents] = useState([])
-  const [payments, setPayments] = useState([])
+  const [stripePayments, setStripePayments] = useState([])
+  const [stripeMode, setStripeMode] = useState('demo')
   const [loadingData, setLoadingData] = useState(true)
 
   const stats = useMemo(() => ({
@@ -543,19 +527,29 @@ export default function Home() {
 
   const refreshData = async () => {
     try {
-      const [cRes, eRes, pRes] = await Promise.all([
-        fetch('/api/clients', { cache: 'no-store' }),
-        fetch('/api/events',  { cache: 'no-store' }),
-        fetch('/api/payments', { cache: 'no-store' }),
+      const [cRes, eRes, sRes] = await Promise.all([
+        fetch('/api/clients',         { cache: 'no-store' }),
+        fetch('/api/events',          { cache: 'no-store' }),
+        fetch('/api/stripe/payments', { cache: 'no-store' }),
       ])
       const c = await cRes.json()
       const e = await eRes.json()
-      const p = await pRes.json()
+      const s = await sRes.json()
       setClients(c.clients || [])
       setEvents(e.events || [])
-      setPayments(p.payments || [])
+      setStripePayments(s.payments || [])
+      setStripeMode(s.mode || 'demo')
     } catch (e) {}
     setLoadingData(false)
+  }
+
+  const refreshStripe = async () => {
+    try {
+      const res = await fetch('/api/stripe/payments', { cache: 'no-store' })
+      const data = await res.json()
+      setStripePayments(data.payments || [])
+      setStripeMode(data.mode || 'demo')
+    } catch {}
   }
 
   useEffect(() => {
@@ -609,11 +603,6 @@ export default function Home() {
   const deleteEvent = async (id) => {
     await fetch(`/api/events/${id}`, { method: 'DELETE' })
     setEvents(prev => prev.filter(e => e.id !== id))
-  }
-  const togglePayment = async (id, status) => {
-    const res = await fetch('/api/payments', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id, status }) })
-    const data = await res.json()
-    if (data.payment) setPayments(prev => prev.map(p => p.id === id ? data.payment : p))
   }
 
   if (authed === null) return <div style={{ minHeight: '100vh' }} />
@@ -789,13 +778,20 @@ export default function Home() {
         {activeTab === 'Suivi' && (
           <PaymentTracking
             clients={clients}
-            payments={payments}
-            onTogglePayment={togglePayment}
+            stripePayments={stripePayments}
+            stripeMode={stripeMode}
+            onRefresh={refreshStripe}
           />
         )}
 
         {/* STRIPE */}
-        {activeTab === 'Stripe' && <StripeView />}
+        {activeTab === 'Stripe' && (
+          <StripeView
+            payments={stripePayments}
+            mode={stripeMode}
+            onRefresh={refreshStripe}
+          />
+        )}
 
         {/* EMAILS */}
         {activeTab === 'Emails' && (
