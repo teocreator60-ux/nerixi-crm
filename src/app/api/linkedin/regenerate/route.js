@@ -54,9 +54,10 @@ export async function POST(request) {
     } else {
       try {
         const json = JSON.parse(text)
-        generated = json.content || json.text || json.post || json.output || json.message || (typeof json === 'string' ? json : null)
+        generated = json.content || json.contenu || json.text || json.post || json.output || json.message || json.body || json.result || (typeof json === 'string' ? json : null)
         if (!generated && Array.isArray(json) && json[0]) {
-          generated = json[0].content || json[0].text || json[0].output
+          const it = json[0]
+          generated = it.content || it.contenu || it.text || it.output || it.message || it.body || it.result
         }
       } catch {
         generated = text
