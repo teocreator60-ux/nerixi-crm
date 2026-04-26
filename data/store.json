@@ -1,0 +1,2116 @@
+{
+  "clients": [
+    {
+      "id": 1,
+      "nom": "Pierre Martin",
+      "entreprise": "Martin Commerce",
+      "secteur": "Commerce",
+      "email": "pierre.martin@martincommerce.fr",
+      "telephone": "06 12 34 56 78",
+      "statut": "churné",
+      "mrr": 150,
+      "installation": 2000,
+      "dateDebut": "2024-01-15",
+      "avancement": 100,
+      "notes": "Premier client. Très satisfait. A récupéré 23 000€ de devis oubliés en 3 mois.",
+      "automatisations": [
+        "Relances devis automatiques",
+        "Ressaisie comptabilité",
+        "Dashboard rentabilité"
+      ],
+      "prochainAction": "Renouvellement 12 mois",
+      "linkedin": "https://linkedin.com/in/pierre-martin",
+      "tags": [
+        "référence",
+        "commerce",
+        "relances"
+      ],
+      "onboardingChecklist": [
+        {
+          "id": "kickoff",
+          "label": "Premier appel de cadrage",
+          "done": true
+        },
+        {
+          "id": "contract",
+          "label": "Contrat envoyé",
+          "done": true
+        },
+        {
+          "id": "signed",
+          "label": "Contrat signé (Docuseal)",
+          "done": true
+        },
+        {
+          "id": "access",
+          "label": "Accès créés (outils, data)",
+          "done": true
+        },
+        {
+          "id": "training",
+          "label": "Formation équipe réalisée",
+          "done": true
+        },
+        {
+          "id": "production",
+          "label": "Mise en production",
+          "done": true
+        },
+        {
+          "id": "review",
+          "label": "Revue J+30 planifiée",
+          "done": true
+        }
+      ]
+    },
+    {
+      "id": 7,
+      "nom": "Pierre Martin",
+      "entreprise": "Martin Commerce",
+      "secteur": "Commerce",
+      "email": "pierre@martincommerce.fr",
+      "telephone": "06 12 34 56 78",
+      "statut": "churné",
+      "mrr": 0,
+      "installation": 0,
+      "dateDebut": "2026-04-25",
+      "avancement": 0,
+      "notes": "Rôle : DG",
+      "automatisations": [],
+      "prochainAction": "",
+      "linkedin": "https://linkedin.com/in/pierre-martin",
+      "tags": [],
+      "onboardingChecklist": [
+        {
+          "id": "kickoff",
+          "label": "Premier appel de cadrage",
+          "done": true
+        },
+        {
+          "id": "contract",
+          "label": "Contrat envoyé",
+          "done": true
+        },
+        {
+          "id": "signed",
+          "label": "Contrat signé (Docuseal)",
+          "done": false
+        },
+        {
+          "id": "access",
+          "label": "Accès créés (outils, data)",
+          "done": false
+        },
+        {
+          "id": "training",
+          "label": "Formation équipe réalisée",
+          "done": false
+        },
+        {
+          "id": "production",
+          "label": "Mise en production",
+          "done": false
+        },
+        {
+          "id": "review",
+          "label": "Revue J+30 planifiée",
+          "done": false
+        }
+      ]
+    },
+    {
+      "id": 8,
+      "nom": "Sophie Dubois",
+      "entreprise": "Dubois & Associés",
+      "secteur": "Conseil",
+      "email": "sophie@dubois.fr",
+      "telephone": "06 98 76 54 32",
+      "statut": "churné",
+      "mrr": 0,
+      "installation": 0,
+      "dateDebut": "2026-04-25",
+      "avancement": 0,
+      "notes": "Rôle : Associée",
+      "automatisations": [],
+      "prochainAction": "",
+      "linkedin": "",
+      "tags": [],
+      "onboardingChecklist": [
+        {
+          "id": "kickoff",
+          "label": "Premier appel de cadrage",
+          "done": false
+        },
+        {
+          "id": "contract",
+          "label": "Contrat envoyé",
+          "done": false
+        },
+        {
+          "id": "signed",
+          "label": "Contrat signé (Docuseal)",
+          "done": true
+        },
+        {
+          "id": "access",
+          "label": "Accès créés (outils, data)",
+          "done": false
+        },
+        {
+          "id": "training",
+          "label": "Formation équipe réalisée",
+          "done": false
+        },
+        {
+          "id": "production",
+          "label": "Mise en production",
+          "done": false
+        },
+        {
+          "id": "review",
+          "label": "Revue J+30 planifiée",
+          "done": false
+        }
+      ]
+    },
+    {
+      "id": 9,
+      "nom": "téo",
+      "entreprise": "nerixi",
+      "secteur": "Commerce",
+      "email": "info@nerixi.com",
+      "telephone": "0766742479",
+      "statut": "churné",
+      "mrr": 0,
+      "installation": 0,
+      "dateDebut": "2026-04-25",
+      "avancement": 0,
+      "notes": "",
+      "automatisations": [],
+      "prochainAction": "",
+      "linkedin": "",
+      "tags": []
+    },
+    {
+      "id": 10,
+      "nom": "kjpfa",
+      "entreprise": "fklajfl",
+      "secteur": "Autre",
+      "email": "info@ckr-fermetures.fr",
+      "telephone": "1241é",
+      "statut": "actif",
+      "mrr": 0,
+      "installation": 0,
+      "dateDebut": "2026-04-25",
+      "avancement": 0,
+      "notes": "Source : cold",
+      "automatisations": [],
+      "prochainAction": "",
+      "linkedin": "",
+      "tags": [
+        "cold"
+      ]
+    },
+    {
+      "id": 11,
+      "nom": "bjkjkgh",
+      "entreprise": "kglijkghb;;",
+      "secteur": "Autre",
+      "email": "",
+      "telephone": "",
+      "statut": "prospect",
+      "mrr": 0,
+      "installation": 0,
+      "dateDebut": "2026-04-25",
+      "avancement": 0,
+      "notes": "Source : cold",
+      "automatisations": [],
+      "prochainAction": "",
+      "linkedin": "",
+      "tags": [
+        "cold"
+      ]
+    }
+  ],
+  "payments": [
+    {
+      "id": "pay_1_2024_1",
+      "clientId": 1,
+      "amount": 150,
+      "date": "2024-01-14",
+      "status": "paid"
+    },
+    {
+      "id": "pay_1_2024_2",
+      "clientId": 1,
+      "amount": 150,
+      "date": "2024-02-14",
+      "status": "paid"
+    },
+    {
+      "id": "pay_1_2024_3",
+      "clientId": 1,
+      "amount": 150,
+      "date": "2024-03-14",
+      "status": "paid"
+    },
+    {
+      "id": "pay_1_2024_4",
+      "clientId": 1,
+      "amount": 150,
+      "date": "2024-04-14",
+      "status": "paid"
+    },
+    {
+      "id": "pay_1_2024_5",
+      "clientId": 1,
+      "amount": 150,
+      "date": "2024-05-14",
+      "status": "paid"
+    },
+    {
+      "id": "pay_1_2024_6",
+      "clientId": 1,
+      "amount": 150,
+      "date": "2024-06-14",
+      "status": "paid"
+    },
+    {
+      "id": "pay_1_2024_7",
+      "clientId": 1,
+      "amount": 150,
+      "date": "2024-07-14",
+      "status": "paid"
+    },
+    {
+      "id": "pay_1_2024_8",
+      "clientId": 1,
+      "amount": 150,
+      "date": "2024-08-14",
+      "status": "paid"
+    },
+    {
+      "id": "pay_1_2024_9",
+      "clientId": 1,
+      "amount": 150,
+      "date": "2024-09-14",
+      "status": "paid"
+    },
+    {
+      "id": "pay_1_2024_10",
+      "clientId": 1,
+      "amount": 150,
+      "date": "2024-10-14",
+      "status": "paid"
+    },
+    {
+      "id": "pay_1_2024_11",
+      "clientId": 1,
+      "amount": 150,
+      "date": "2024-11-14",
+      "status": "paid"
+    },
+    {
+      "id": "pay_1_2024_12",
+      "clientId": 1,
+      "amount": 150,
+      "date": "2024-12-14",
+      "status": "paid"
+    },
+    {
+      "id": "pay_1_2025_1",
+      "clientId": 1,
+      "amount": 150,
+      "date": "2025-01-14",
+      "status": "paid"
+    },
+    {
+      "id": "pay_1_2025_2",
+      "clientId": 1,
+      "amount": 150,
+      "date": "2025-02-14",
+      "status": "paid"
+    },
+    {
+      "id": "pay_1_2025_3",
+      "clientId": 1,
+      "amount": 150,
+      "date": "2025-03-14",
+      "status": "paid"
+    },
+    {
+      "id": "pay_1_2025_4",
+      "clientId": 1,
+      "amount": 150,
+      "date": "2025-04-14",
+      "status": "paid"
+    },
+    {
+      "id": "pay_1_2025_5",
+      "clientId": 1,
+      "amount": 150,
+      "date": "2025-05-14",
+      "status": "paid"
+    },
+    {
+      "id": "pay_1_2025_6",
+      "clientId": 1,
+      "amount": 150,
+      "date": "2025-06-14",
+      "status": "paid"
+    },
+    {
+      "id": "pay_1_2025_7",
+      "clientId": 1,
+      "amount": 150,
+      "date": "2025-07-14",
+      "status": "paid"
+    },
+    {
+      "id": "pay_1_2025_8",
+      "clientId": 1,
+      "amount": 150,
+      "date": "2025-08-14",
+      "status": "paid"
+    },
+    {
+      "id": "pay_1_2025_9",
+      "clientId": 1,
+      "amount": 150,
+      "date": "2025-09-14",
+      "status": "paid"
+    },
+    {
+      "id": "pay_1_2025_10",
+      "clientId": 1,
+      "amount": 150,
+      "date": "2025-10-14",
+      "status": "paid"
+    },
+    {
+      "id": "pay_1_2025_11",
+      "clientId": 1,
+      "amount": 150,
+      "date": "2025-11-14",
+      "status": "paid"
+    },
+    {
+      "id": "pay_1_2025_12",
+      "clientId": 1,
+      "amount": 150,
+      "date": "2025-12-14",
+      "status": "paid"
+    },
+    {
+      "id": "pay_1_2026_1",
+      "clientId": 1,
+      "amount": 150,
+      "date": "2026-01-14",
+      "status": "paid"
+    },
+    {
+      "id": "pay_1_2026_2",
+      "clientId": 1,
+      "amount": 150,
+      "date": "2026-02-14",
+      "status": "paid"
+    },
+    {
+      "id": "pay_1_2026_3",
+      "clientId": 1,
+      "amount": 150,
+      "date": "2026-03-14",
+      "status": "paid"
+    },
+    {
+      "id": "pay_1_2026_4",
+      "clientId": 1,
+      "amount": 150,
+      "date": "2026-04-14",
+      "status": "pending"
+    }
+  ],
+  "events": [
+    {
+      "id": "evt_seed_1",
+      "clientId": 1,
+      "date": "2026-04-25",
+      "time": "14:30",
+      "title": "Point hebdo Martin Commerce",
+      "type": "meeting",
+      "done": false,
+      "notes": ""
+    },
+    {
+      "id": "evt_seed_4",
+      "clientId": null,
+      "date": "2026-05-02",
+      "time": "09:00",
+      "title": "Bilan mensuel Nerixi",
+      "type": "reminder",
+      "done": false,
+      "notes": ""
+    },
+    {
+      "id": "evt_1777132963026_k0byz",
+      "clientId": 9,
+      "date": "2026-04-28",
+      "time": "10:00",
+      "title": "Premier point de cadrage",
+      "type": "meeting",
+      "done": false,
+      "notes": ""
+    }
+  ],
+  "activities": [
+    {
+      "id": "act_seed_1",
+      "ts": "2024-01-15T08:00:00.000Z",
+      "clientId": 1,
+      "type": "client_created",
+      "payload": {
+        "entreprise": "Martin Commerce"
+      }
+    },
+    {
+      "id": "act_seed_2",
+      "ts": "2024-02-01T08:00:00.000Z",
+      "clientId": 2,
+      "type": "client_created",
+      "payload": {
+        "entreprise": "Moreau Logistique"
+      }
+    },
+    {
+      "id": "act_seed_3",
+      "ts": "2024-02-15T08:00:00.000Z",
+      "clientId": 3,
+      "type": "client_created",
+      "payload": {
+        "entreprise": "Bernard & Associés BTP"
+      }
+    },
+    {
+      "id": "act_seed_4",
+      "ts": "2024-03-01T08:00:00.000Z",
+      "clientId": 4,
+      "type": "client_created",
+      "payload": {
+        "entreprise": "Renard Immobilier"
+      }
+    },
+    {
+      "id": "act_seed_5",
+      "ts": "2024-03-15T08:00:00.000Z",
+      "clientId": 5,
+      "type": "client_created",
+      "payload": {
+        "entreprise": "Dupré Transport"
+      }
+    },
+    {
+      "id": "act_1777131727743_glw1u",
+      "ts": "2026-04-25T15:42:07.743Z",
+      "clientId": 6,
+      "type": "client_created",
+      "payload": {
+        "entreprise": "caca",
+        "statut": "prospect"
+      }
+    },
+    {
+      "id": "act_1777131735992_tdar3",
+      "ts": "2026-04-25T15:42:15.992Z",
+      "clientId": 1,
+      "type": "status_changed",
+      "payload": {
+        "from": "actif",
+        "to": "churné"
+      }
+    },
+    {
+      "id": "act_1777131736554_wugga",
+      "ts": "2026-04-25T15:42:16.554Z",
+      "clientId": 1,
+      "type": "status_changed",
+      "payload": {
+        "from": "churné",
+        "to": "actif"
+      }
+    },
+    {
+      "id": "act_1777131737539_6x9nd",
+      "ts": "2026-04-25T15:42:17.539Z",
+      "clientId": 1,
+      "type": "status_changed",
+      "payload": {
+        "from": "actif",
+        "to": "en-cours"
+      }
+    },
+    {
+      "id": "act_1777131741761_aw4vi",
+      "ts": "2026-04-25T15:42:21.761Z",
+      "clientId": 5,
+      "type": "status_changed",
+      "payload": {
+        "from": "en-cours",
+        "to": "prospect"
+      }
+    },
+    {
+      "id": "act_1777131743905_xnibe",
+      "ts": "2026-04-25T15:42:23.905Z",
+      "clientId": 3,
+      "type": "status_changed",
+      "payload": {
+        "from": "actif",
+        "to": "prospect"
+      }
+    },
+    {
+      "id": "act_1777131745304_yy5yy",
+      "ts": "2026-04-25T15:42:25.304Z",
+      "clientId": 2,
+      "type": "status_changed",
+      "payload": {
+        "from": "actif",
+        "to": "prospect"
+      }
+    },
+    {
+      "id": "act_1777131746679_78w1s",
+      "ts": "2026-04-25T15:42:26.679Z",
+      "clientId": 4,
+      "type": "status_changed",
+      "payload": {
+        "from": "actif",
+        "to": "prospect"
+      }
+    },
+    {
+      "id": "act_1777131969306_1mies",
+      "ts": "2026-04-25T15:46:09.306Z",
+      "clientId": 7,
+      "type": "client_created",
+      "payload": {
+        "entreprise": "Martin Commerce",
+        "statut": "prospect"
+      }
+    },
+    {
+      "id": "act_1777131970750_ir0j2",
+      "ts": "2026-04-25T15:46:10.750Z",
+      "clientId": 8,
+      "type": "client_created",
+      "payload": {
+        "entreprise": "Dubois & Associés",
+        "statut": "prospect"
+      }
+    },
+    {
+      "id": "act_1777132962703_6qbvy",
+      "ts": "2026-04-25T16:02:42.703Z",
+      "clientId": 9,
+      "type": "client_created",
+      "payload": {
+        "entreprise": "nerixi",
+        "statut": "prospect"
+      }
+    },
+    {
+      "id": "act_1777132963027_1qat0",
+      "ts": "2026-04-25T16:02:43.027Z",
+      "clientId": 9,
+      "type": "workflow_executed",
+      "payload": {
+        "workflowId": "wf_seed_welcome",
+        "name": "Bienvenue nouveau client",
+        "eventType": "client.created",
+        "results": [
+          {
+            "actionId": "a1",
+            "type": "send_email",
+            "success": false,
+            "error": "Key not found"
+          },
+          {
+            "actionId": "a2",
+            "type": "create_event",
+            "success": true,
+            "eventId": "evt_1777132963026_k0byz"
+          },
+          {
+            "actionId": "a3",
+            "type": "trigger_n8n",
+            "skipped": "no_url"
+          }
+        ]
+      }
+    },
+    {
+      "id": "act_1777135582708_22ff4",
+      "ts": "2026-04-25T16:46:22.708Z",
+      "clientId": null,
+      "type": "linkedin_regenerated",
+      "payload": {
+        "title": "Publication résultat client",
+        "status": "sent",
+        "error": null,
+        "length": 0
+      }
+    },
+    {
+      "id": "act_1777135588325_sh74i",
+      "ts": "2026-04-25T16:46:28.325Z",
+      "clientId": null,
+      "type": "linkedin_regenerated",
+      "payload": {
+        "title": "Publication résultat client",
+        "status": "sent",
+        "error": null,
+        "length": 0
+      }
+    },
+    {
+      "id": "act_1777135814600_8ui5c",
+      "ts": "2026-04-25T16:50:14.600Z",
+      "clientId": null,
+      "type": "linkedin_regenerated",
+      "payload": {
+        "title": "Publication résultat client",
+        "status": "sent",
+        "error": null,
+        "length": 0
+      }
+    },
+    {
+      "id": "act_1777135818036_whufl",
+      "ts": "2026-04-25T16:50:18.036Z",
+      "clientId": null,
+      "type": "linkedin_regenerated",
+      "payload": {
+        "title": "Publication résultat client",
+        "status": "sent",
+        "error": null,
+        "length": 0
+      }
+    },
+    {
+      "id": "act_1777135818550_qd0lv",
+      "ts": "2026-04-25T16:50:18.550Z",
+      "clientId": null,
+      "type": "linkedin_regenerated",
+      "payload": {
+        "title": "Publication résultat client",
+        "status": "sent",
+        "error": null,
+        "length": 0
+      }
+    },
+    {
+      "id": "act_1777135818718_vc14r",
+      "ts": "2026-04-25T16:50:18.718Z",
+      "clientId": null,
+      "type": "linkedin_regenerated",
+      "payload": {
+        "title": "Publication résultat client",
+        "status": "sent",
+        "error": null,
+        "length": 0
+      }
+    },
+    {
+      "id": "act_1777135858309_juoun",
+      "ts": "2026-04-25T16:50:58.309Z",
+      "clientId": null,
+      "type": "linkedin_regenerated",
+      "payload": {
+        "title": "Publication résultat client",
+        "status": "sent",
+        "error": null,
+        "length": 0
+      }
+    },
+    {
+      "id": "act_1777136377669_etqb0",
+      "ts": "2026-04-25T16:59:37.669Z",
+      "clientId": null,
+      "type": "linkedin_regenerated",
+      "payload": {
+        "title": "Publication résultat client",
+        "status": "sent",
+        "error": null,
+        "length": 0
+      }
+    },
+    {
+      "id": "act_1777136386360_jbrct",
+      "ts": "2026-04-25T16:59:46.360Z",
+      "clientId": null,
+      "type": "linkedin_regenerated",
+      "payload": {
+        "title": "Publication résultat client",
+        "status": "sent",
+        "error": null,
+        "length": 0
+      }
+    },
+    {
+      "id": "act_1777136393649_gprfv",
+      "ts": "2026-04-25T16:59:53.649Z",
+      "clientId": null,
+      "type": "linkedin_regenerated",
+      "payload": {
+        "title": "Publication résultat client",
+        "status": "sent",
+        "error": null,
+        "length": 0
+      }
+    },
+    {
+      "id": "act_1777136400647_jx0wq",
+      "ts": "2026-04-25T17:00:00.647Z",
+      "clientId": null,
+      "type": "linkedin_regenerated",
+      "payload": {
+        "title": "Publication résultat client",
+        "status": "sent",
+        "error": null,
+        "length": 0
+      }
+    },
+    {
+      "id": "act_1777136402040_c2l5d",
+      "ts": "2026-04-25T17:00:02.040Z",
+      "clientId": null,
+      "type": "linkedin_regenerated",
+      "payload": {
+        "title": "Publication résultat client",
+        "status": "sent",
+        "error": null,
+        "length": 0
+      }
+    },
+    {
+      "id": "act_1777136434732_pvyoq",
+      "ts": "2026-04-25T17:00:34.732Z",
+      "clientId": null,
+      "type": "linkedin_regenerated",
+      "payload": {
+        "title": "Publication résultat client",
+        "status": "failed",
+        "error": "n8n a répondu 404 : {\"code\":404,\"message\":\"The requested webhook \\\"nerixi-linkedin\\\" is not registered.\",\"hint\":\"Click the 'Execute workflow' button on the canvas, then try again. (In test mode, the webhook only works fo",
+        "length": 0
+      }
+    },
+    {
+      "id": "act_1777136436008_me2zc",
+      "ts": "2026-04-25T17:00:36.008Z",
+      "clientId": null,
+      "type": "linkedin_regenerated",
+      "payload": {
+        "title": "Publication résultat client",
+        "status": "failed",
+        "error": "n8n a répondu 404 : {\"code\":404,\"message\":\"The requested webhook \\\"nerixi-linkedin\\\" is not registered.\",\"hint\":\"Click the 'Execute workflow' button on the canvas, then try again. (In test mode, the webhook only works fo",
+        "length": 0
+      }
+    },
+    {
+      "id": "act_1777136593015_7m4vx",
+      "ts": "2026-04-25T17:03:13.015Z",
+      "clientId": null,
+      "type": "linkedin_regenerated",
+      "payload": {
+        "title": "Publication résultat client",
+        "status": "sent",
+        "error": null,
+        "length": 0
+      }
+    },
+    {
+      "id": "act_1777136673162_46huf",
+      "ts": "2026-04-25T17:04:33.162Z",
+      "clientId": null,
+      "type": "linkedin_regenerated",
+      "payload": {
+        "title": "Publication résultat client",
+        "status": "sent",
+        "error": null,
+        "length": 0
+      }
+    },
+    {
+      "id": "act_1777136682415_gn8xt",
+      "ts": "2026-04-25T17:04:42.415Z",
+      "clientId": null,
+      "type": "linkedin_regenerated",
+      "payload": {
+        "title": "Publication résultat client",
+        "status": "sent",
+        "error": null,
+        "length": 0
+      }
+    },
+    {
+      "id": "act_1777136828415_vym0d",
+      "ts": "2026-04-25T17:07:08.415Z",
+      "clientId": null,
+      "type": "linkedin_regenerated",
+      "payload": {
+        "title": "Publication résultat client",
+        "status": "sent",
+        "error": null,
+        "length": 0
+      }
+    },
+    {
+      "id": "act_1777137027557_ly62t",
+      "ts": "2026-04-25T17:10:27.557Z",
+      "clientId": null,
+      "type": "linkedin_regenerated",
+      "payload": {
+        "title": "Publication résultat client",
+        "status": "sent",
+        "error": null,
+        "length": 0
+      }
+    },
+    {
+      "id": "act_1777137177637_3x118",
+      "ts": "2026-04-25T17:12:57.637Z",
+      "clientId": null,
+      "type": "linkedin_regenerated",
+      "payload": {
+        "title": "Publication résultat client",
+        "status": "sent",
+        "error": null,
+        "length": 0
+      }
+    },
+    {
+      "id": "act_1777137184771_ihf3g",
+      "ts": "2026-04-25T17:13:04.771Z",
+      "clientId": null,
+      "type": "linkedin_regenerated",
+      "payload": {
+        "title": "Publication résultat client",
+        "status": "sent",
+        "error": null,
+        "length": 0
+      }
+    },
+    {
+      "id": "act_1777137251400_4aeg7",
+      "ts": "2026-04-25T17:14:11.400Z",
+      "clientId": null,
+      "type": "linkedin_regenerated",
+      "payload": {
+        "title": "Publication résultat client",
+        "status": "sent",
+        "error": null,
+        "length": 0
+      }
+    },
+    {
+      "id": "act_1777137515311_l5f4e",
+      "ts": "2026-04-25T17:18:35.311Z",
+      "clientId": null,
+      "type": "linkedin_regenerated",
+      "payload": {
+        "title": "Publication résultat client",
+        "status": "sent",
+        "error": null,
+        "length": 0
+      }
+    },
+    {
+      "id": "act_1777137536595_ytd0z",
+      "ts": "2026-04-25T17:18:56.595Z",
+      "clientId": null,
+      "type": "linkedin_regenerated",
+      "payload": {
+        "title": "Publication résultat client",
+        "status": "sent",
+        "error": null,
+        "length": 0
+      }
+    },
+    {
+      "id": "act_1777137565852_liy4c",
+      "ts": "2026-04-25T17:19:25.852Z",
+      "clientId": null,
+      "type": "linkedin_regenerated",
+      "payload": {
+        "title": "Publication résultat client",
+        "status": "sent",
+        "error": null,
+        "length": 0
+      }
+    },
+    {
+      "id": "act_1777137594819_yj5nh",
+      "ts": "2026-04-25T17:19:54.819Z",
+      "clientId": null,
+      "type": "linkedin_regenerated",
+      "payload": {
+        "title": "Publication résultat client",
+        "status": "sent",
+        "error": null,
+        "length": 0
+      }
+    },
+    {
+      "id": "act_1777137716185_ghlg6",
+      "ts": "2026-04-25T17:21:56.185Z",
+      "clientId": null,
+      "type": "linkedin_regenerated",
+      "payload": {
+        "title": "Publication résultat client",
+        "status": "sent",
+        "error": null,
+        "length": 0
+      }
+    },
+    {
+      "id": "act_1777137786592_cba5j",
+      "ts": "2026-04-25T17:23:06.592Z",
+      "clientId": null,
+      "type": "linkedin_regenerated",
+      "payload": {
+        "title": "Publication résultat client",
+        "status": "sent",
+        "error": null,
+        "length": 205
+      }
+    },
+    {
+      "id": "act_1777137803983_97ydl",
+      "ts": "2026-04-25T17:23:23.983Z",
+      "clientId": null,
+      "type": "linkedin_generated",
+      "payload": {
+        "postId": "lipost_1777137803978_xvz7",
+        "postType": "bofu",
+        "sujet": "martin a recuper 23 K",
+        "length": 630
+      }
+    },
+    {
+      "id": "act_1777137898930_98l8z",
+      "ts": "2026-04-25T17:24:58.930Z",
+      "clientId": 7,
+      "type": "status_changed",
+      "payload": {
+        "from": "prospect",
+        "to": "churné"
+      }
+    },
+    {
+      "id": "act_1777142821153_m29sy",
+      "ts": "2026-04-25T18:47:01.153Z",
+      "clientId": 1,
+      "type": "status_changed",
+      "payload": {
+        "from": "en-cours",
+        "to": "prospect"
+      }
+    },
+    {
+      "id": "act_1777142822953_2li6b",
+      "ts": "2026-04-25T18:47:02.953Z",
+      "clientId": 7,
+      "type": "status_changed",
+      "payload": {
+        "from": "churné",
+        "to": "prospect"
+      }
+    },
+    {
+      "id": "act_1777142826700_lxeh3",
+      "ts": "2026-04-25T18:47:06.700Z",
+      "clientId": 1,
+      "type": "status_changed",
+      "payload": {
+        "from": "prospect",
+        "to": "en-cours"
+      }
+    },
+    {
+      "id": "act_1777142828395_mpusp",
+      "ts": "2026-04-25T18:47:08.395Z",
+      "clientId": 7,
+      "type": "status_changed",
+      "payload": {
+        "from": "prospect",
+        "to": "en-cours"
+      }
+    },
+    {
+      "id": "act_1777142829397_gydov",
+      "ts": "2026-04-25T18:47:09.397Z",
+      "clientId": 8,
+      "type": "status_changed",
+      "payload": {
+        "from": "prospect",
+        "to": "en-cours"
+      }
+    },
+    {
+      "id": "act_1777142830478_qzjf0",
+      "ts": "2026-04-25T18:47:10.479Z",
+      "clientId": 9,
+      "type": "status_changed",
+      "payload": {
+        "from": "prospect",
+        "to": "en-cours"
+      }
+    },
+    {
+      "id": "act_1777142832303_pz689",
+      "ts": "2026-04-25T18:47:12.303Z",
+      "clientId": 1,
+      "type": "status_changed",
+      "payload": {
+        "from": "en-cours",
+        "to": "actif"
+      }
+    },
+    {
+      "id": "act_1777142833411_d1pn9",
+      "ts": "2026-04-25T18:47:13.411Z",
+      "clientId": 7,
+      "type": "status_changed",
+      "payload": {
+        "from": "en-cours",
+        "to": "actif"
+      }
+    },
+    {
+      "id": "act_1777142834446_rux5f",
+      "ts": "2026-04-25T18:47:14.446Z",
+      "clientId": 8,
+      "type": "status_changed",
+      "payload": {
+        "from": "en-cours",
+        "to": "actif"
+      }
+    },
+    {
+      "id": "act_1777142835612_28lg4",
+      "ts": "2026-04-25T18:47:15.612Z",
+      "clientId": 9,
+      "type": "status_changed",
+      "payload": {
+        "from": "en-cours",
+        "to": "actif"
+      }
+    },
+    {
+      "id": "act_1777142837662_1ovqq",
+      "ts": "2026-04-25T18:47:17.662Z",
+      "clientId": 1,
+      "type": "status_changed",
+      "payload": {
+        "from": "actif",
+        "to": "churné"
+      }
+    },
+    {
+      "id": "act_1777142838646_zv6gc",
+      "ts": "2026-04-25T18:47:18.646Z",
+      "clientId": 7,
+      "type": "status_changed",
+      "payload": {
+        "from": "actif",
+        "to": "churné"
+      }
+    },
+    {
+      "id": "act_1777142839501_rcfv8",
+      "ts": "2026-04-25T18:47:19.501Z",
+      "clientId": 9,
+      "type": "status_changed",
+      "payload": {
+        "from": "actif",
+        "to": "churné"
+      }
+    },
+    {
+      "id": "act_1777142840371_gfn72",
+      "ts": "2026-04-25T18:47:20.371Z",
+      "clientId": 8,
+      "type": "status_changed",
+      "payload": {
+        "from": "actif",
+        "to": "churné"
+      }
+    },
+    {
+      "id": "act_1777142907328_5wa1j",
+      "ts": "2026-04-25T18:48:27.328Z",
+      "clientId": null,
+      "type": "linkedin_generated",
+      "payload": {
+        "postId": "lipost_1777142907327_4ox9",
+        "postType": "hook",
+        "sujet": "automatisations complète pme",
+        "length": 232
+      }
+    },
+    {
+      "id": "act_1777145774255_wgi98",
+      "ts": "2026-04-25T19:36:14.255Z",
+      "clientId": null,
+      "type": "prospect_stage_changed",
+      "payload": {
+        "prospectId": "prosp_1777145772273_qps7",
+        "entreprise": "fklajfl",
+        "from": "contacte",
+        "to": "froid"
+      }
+    },
+    {
+      "id": "act_1777145936931_bqwrb",
+      "ts": "2026-04-25T19:38:56.931Z",
+      "clientId": null,
+      "type": "prospect_stage_changed",
+      "payload": {
+        "prospectId": "prosp_1777145772273_qps7",
+        "entreprise": "fklajfl",
+        "from": "froid",
+        "to": "contacte"
+      }
+    },
+    {
+      "id": "act_1777145939062_d66sa",
+      "ts": "2026-04-25T19:38:59.062Z",
+      "clientId": null,
+      "type": "prospect_stage_changed",
+      "payload": {
+        "prospectId": "prosp_1777145772273_qps7",
+        "entreprise": "fklajfl",
+        "from": "contacte",
+        "to": "proposition"
+      }
+    },
+    {
+      "id": "act_1777145961312_05ukk",
+      "ts": "2026-04-25T19:39:21.312Z",
+      "clientId": 1,
+      "type": "status_changed",
+      "payload": {
+        "from": "churné",
+        "to": "prospect"
+      }
+    },
+    {
+      "id": "act_1777146298950_3bp2x",
+      "ts": "2026-04-25T19:44:58.950Z",
+      "clientId": 10,
+      "type": "client_created",
+      "payload": {
+        "entreprise": "fklajfl",
+        "statut": "en-cours"
+      }
+    },
+    {
+      "id": "act_1777146298951_ozyky",
+      "ts": "2026-04-25T19:44:58.951Z",
+      "clientId": 10,
+      "type": "converted_from_prospect",
+      "payload": {
+        "prospectId": "prosp_1777145772273_qps7",
+        "entreprise": "fklajfl"
+      }
+    },
+    {
+      "id": "act_1777146949610_o70m8",
+      "ts": "2026-04-25T19:55:49.610Z",
+      "clientId": null,
+      "type": "prospect_stage_changed",
+      "payload": {
+        "prospectId": "prosp_1777146946813_bdtk",
+        "entreprise": "kglijkghb;;",
+        "from": "froid",
+        "to": "contacte"
+      }
+    },
+    {
+      "id": "act_1777146949977_qlc6o",
+      "ts": "2026-04-25T19:55:49.977Z",
+      "clientId": null,
+      "type": "prospect_stage_changed",
+      "payload": {
+        "prospectId": "prosp_1777146946813_bdtk",
+        "entreprise": "kglijkghb;;",
+        "from": "contacte",
+        "to": "rdv_programme"
+      }
+    },
+    {
+      "id": "act_1777146952095_mvjyj",
+      "ts": "2026-04-25T19:55:52.095Z",
+      "clientId": null,
+      "type": "prospect_stage_changed",
+      "payload": {
+        "prospectId": "prosp_1777146946813_bdtk",
+        "entreprise": "kglijkghb;;",
+        "from": "rdv_programme",
+        "to": "rdv_fait"
+      }
+    },
+    {
+      "id": "act_1777146953615_9f7ob",
+      "ts": "2026-04-25T19:55:53.615Z",
+      "clientId": null,
+      "type": "prospect_stage_changed",
+      "payload": {
+        "prospectId": "prosp_1777146946813_bdtk",
+        "entreprise": "kglijkghb;;",
+        "from": "rdv_fait",
+        "to": "proposition"
+      }
+    },
+    {
+      "id": "act_1777146955711_9rxpm",
+      "ts": "2026-04-25T19:55:55.711Z",
+      "clientId": 11,
+      "type": "client_created",
+      "payload": {
+        "entreprise": "kglijkghb;;",
+        "statut": "prospect"
+      }
+    },
+    {
+      "id": "act_1777146955711_h5e30",
+      "ts": "2026-04-25T19:55:55.711Z",
+      "clientId": 11,
+      "type": "converted_from_prospect",
+      "payload": {
+        "prospectId": "prosp_1777146946813_bdtk",
+        "entreprise": "kglijkghb;;"
+      }
+    },
+    {
+      "id": "act_1777146957902_we2a9",
+      "ts": "2026-04-25T19:55:57.902Z",
+      "clientId": 1,
+      "type": "status_changed",
+      "payload": {
+        "from": "prospect",
+        "to": "en-cours"
+      }
+    },
+    {
+      "id": "act_1777146958602_3e45s",
+      "ts": "2026-04-25T19:55:58.602Z",
+      "clientId": 1,
+      "type": "status_changed",
+      "payload": {
+        "from": "en-cours",
+        "to": "actif"
+      }
+    },
+    {
+      "id": "act_1777146959782_lac9g",
+      "ts": "2026-04-25T19:55:59.782Z",
+      "clientId": 1,
+      "type": "status_changed",
+      "payload": {
+        "from": "actif",
+        "to": "churné"
+      }
+    },
+    {
+      "id": "act_1777146961211_iczvl",
+      "ts": "2026-04-25T19:56:01.211Z",
+      "clientId": 1,
+      "type": "status_changed",
+      "payload": {
+        "from": "churné",
+        "to": "actif"
+      }
+    },
+    {
+      "id": "act_1777146963844_xanti",
+      "ts": "2026-04-25T19:56:03.844Z",
+      "clientId": 11,
+      "type": "status_changed",
+      "payload": {
+        "from": "prospect",
+        "to": "en-cours"
+      }
+    },
+    {
+      "id": "act_1777146964944_ydnft",
+      "ts": "2026-04-25T19:56:04.944Z",
+      "clientId": 10,
+      "type": "status_changed",
+      "payload": {
+        "from": "en-cours",
+        "to": "actif"
+      }
+    },
+    {
+      "id": "act_1777146966662_98v4m",
+      "ts": "2026-04-25T19:56:06.662Z",
+      "clientId": 1,
+      "type": "status_changed",
+      "payload": {
+        "from": "actif",
+        "to": "churné"
+      }
+    },
+    {
+      "id": "act_1777147023111_3qvwj",
+      "ts": "2026-04-25T19:57:03.111Z",
+      "clientId": 1,
+      "type": "payment_simulated",
+      "payload": {
+        "amount": 15000,
+        "currency": "eur"
+      }
+    },
+    {
+      "id": "act_1777147027073_oqefa",
+      "ts": "2026-04-25T19:57:07.073Z",
+      "clientId": 8,
+      "type": "payment_simulated",
+      "payload": {
+        "amount": 150000,
+        "currency": "eur"
+      }
+    },
+    {
+      "id": "act_1777147032253_zgg2a",
+      "ts": "2026-04-25T19:57:12.253Z",
+      "clientId": 7,
+      "type": "payment_simulated",
+      "payload": {
+        "amount": 150000,
+        "currency": "eur"
+      }
+    },
+    {
+      "id": "act_1777147032917_xjjcg",
+      "ts": "2026-04-25T19:57:12.917Z",
+      "clientId": 11,
+      "type": "payment_simulated",
+      "payload": {
+        "amount": 150000,
+        "currency": "eur"
+      }
+    },
+    {
+      "id": "act_1777147033459_2sqpd",
+      "ts": "2026-04-25T19:57:13.459Z",
+      "clientId": 8,
+      "type": "payment_simulated",
+      "payload": {
+        "amount": 150000,
+        "currency": "eur"
+      }
+    },
+    {
+      "id": "act_1777147033486_9u7jv",
+      "ts": "2026-04-25T19:57:13.486Z",
+      "clientId": 10,
+      "type": "payment_simulated",
+      "payload": {
+        "amount": 150000,
+        "currency": "eur"
+      }
+    },
+    {
+      "id": "act_1777147033505_skcts",
+      "ts": "2026-04-25T19:57:13.505Z",
+      "clientId": 9,
+      "type": "payment_simulated",
+      "payload": {
+        "amount": 150000,
+        "currency": "eur"
+      }
+    },
+    {
+      "id": "act_1777147035035_iefvv",
+      "ts": "2026-04-25T19:57:15.035Z",
+      "clientId": 9,
+      "type": "payment_simulated",
+      "payload": {
+        "amount": 150000,
+        "currency": "eur"
+      }
+    },
+    {
+      "id": "act_1777147035046_vsax0",
+      "ts": "2026-04-25T19:57:15.046Z",
+      "clientId": 9,
+      "type": "payment_simulated",
+      "payload": {
+        "amount": 150000,
+        "currency": "eur"
+      }
+    },
+    {
+      "id": "act_1777147035086_90pde",
+      "ts": "2026-04-25T19:57:15.086Z",
+      "clientId": 7,
+      "type": "payment_simulated",
+      "payload": {
+        "amount": 150000,
+        "currency": "eur"
+      }
+    },
+    {
+      "id": "act_1777147035115_l08yn",
+      "ts": "2026-04-25T19:57:15.115Z",
+      "clientId": 11,
+      "type": "payment_simulated",
+      "payload": {
+        "amount": 150000,
+        "currency": "eur"
+      }
+    },
+    {
+      "id": "act_1777147035168_nql93",
+      "ts": "2026-04-25T19:57:15.168Z",
+      "clientId": 10,
+      "type": "payment_simulated",
+      "payload": {
+        "amount": 150000,
+        "currency": "eur"
+      }
+    },
+    {
+      "id": "act_1777147035185_ami8g",
+      "ts": "2026-04-25T19:57:15.185Z",
+      "clientId": 8,
+      "type": "payment_simulated",
+      "payload": {
+        "amount": 150000,
+        "currency": "eur"
+      }
+    },
+    {
+      "id": "act_1777147035651_kaxyd",
+      "ts": "2026-04-25T19:57:15.651Z",
+      "clientId": 8,
+      "type": "payment_simulated",
+      "payload": {
+        "amount": 150000,
+        "currency": "eur"
+      }
+    },
+    {
+      "id": "act_1777147037646_dzyu9",
+      "ts": "2026-04-25T19:57:17.646Z",
+      "clientId": 11,
+      "type": "payment_simulated",
+      "payload": {
+        "amount": 150000,
+        "currency": "eur"
+      }
+    },
+    {
+      "id": "act_1777147038314_yddyw",
+      "ts": "2026-04-25T19:57:18.314Z",
+      "clientId": 7,
+      "type": "payment_simulated",
+      "payload": {
+        "amount": 150000,
+        "currency": "eur"
+      }
+    },
+    {
+      "id": "act_1777147038322_al7zf",
+      "ts": "2026-04-25T19:57:18.322Z",
+      "clientId": 7,
+      "type": "payment_simulated",
+      "payload": {
+        "amount": 150000,
+        "currency": "eur"
+      }
+    },
+    {
+      "id": "act_1777147038356_5ftgq",
+      "ts": "2026-04-25T19:57:18.356Z",
+      "clientId": 1,
+      "type": "payment_simulated",
+      "payload": {
+        "amount": 15000,
+        "currency": "eur"
+      }
+    },
+    {
+      "id": "act_1777147038888_e5avt",
+      "ts": "2026-04-25T19:57:18.888Z",
+      "clientId": 9,
+      "type": "payment_simulated",
+      "payload": {
+        "amount": 150000,
+        "currency": "eur"
+      }
+    },
+    {
+      "id": "act_1777147038922_bvxuc",
+      "ts": "2026-04-25T19:57:18.922Z",
+      "clientId": 1,
+      "type": "payment_simulated",
+      "payload": {
+        "amount": 15000,
+        "currency": "eur"
+      }
+    },
+    {
+      "id": "act_1777147038953_gtjv1",
+      "ts": "2026-04-25T19:57:18.953Z",
+      "clientId": 7,
+      "type": "payment_simulated",
+      "payload": {
+        "amount": 150000,
+        "currency": "eur"
+      }
+    },
+    {
+      "id": "act_1777147038992_5o4qb",
+      "ts": "2026-04-25T19:57:18.992Z",
+      "clientId": 11,
+      "type": "payment_simulated",
+      "payload": {
+        "amount": 150000,
+        "currency": "eur"
+      }
+    },
+    {
+      "id": "act_1777147039011_8xbe8",
+      "ts": "2026-04-25T19:57:19.011Z",
+      "clientId": 11,
+      "type": "payment_simulated",
+      "payload": {
+        "amount": 150000,
+        "currency": "eur"
+      }
+    },
+    {
+      "id": "act_1777147039040_li7wo",
+      "ts": "2026-04-25T19:57:19.040Z",
+      "clientId": 7,
+      "type": "payment_simulated",
+      "payload": {
+        "amount": 150000,
+        "currency": "eur"
+      }
+    },
+    {
+      "id": "act_1777147039056_qkpsw",
+      "ts": "2026-04-25T19:57:19.056Z",
+      "clientId": 8,
+      "type": "payment_simulated",
+      "payload": {
+        "amount": 150000,
+        "currency": "eur"
+      }
+    },
+    {
+      "id": "act_1777147047454_6urvl",
+      "ts": "2026-04-25T19:57:27.454Z",
+      "clientId": 11,
+      "type": "payment_simulated",
+      "payload": {
+        "amount": 150000,
+        "currency": "eur"
+      }
+    },
+    {
+      "id": "act_1777147049136_y5mst",
+      "ts": "2026-04-25T19:57:29.136Z",
+      "clientId": 11,
+      "type": "payment_simulated",
+      "payload": {
+        "amount": 150000,
+        "currency": "eur"
+      }
+    },
+    {
+      "id": "act_1777147049741_pi43a",
+      "ts": "2026-04-25T19:57:29.741Z",
+      "clientId": 1,
+      "type": "payment_simulated",
+      "payload": {
+        "amount": 15000,
+        "currency": "eur"
+      }
+    },
+    {
+      "id": "act_1777147049766_5l9hl",
+      "ts": "2026-04-25T19:57:29.766Z",
+      "clientId": 9,
+      "type": "payment_simulated",
+      "payload": {
+        "amount": 150000,
+        "currency": "eur"
+      }
+    },
+    {
+      "id": "act_1777147050812_vkkji",
+      "ts": "2026-04-25T19:57:30.812Z",
+      "clientId": 8,
+      "type": "payment_simulated",
+      "payload": {
+        "amount": 150000,
+        "currency": "eur"
+      }
+    },
+    {
+      "id": "act_1777147050814_hoa4j",
+      "ts": "2026-04-25T19:57:30.814Z",
+      "clientId": 10,
+      "type": "payment_simulated",
+      "payload": {
+        "amount": 150000,
+        "currency": "eur"
+      }
+    },
+    {
+      "id": "act_1777147050869_iquoh",
+      "ts": "2026-04-25T19:57:30.869Z",
+      "clientId": 10,
+      "type": "payment_simulated",
+      "payload": {
+        "amount": 150000,
+        "currency": "eur"
+      }
+    },
+    {
+      "id": "act_1777147050899_l37cu",
+      "ts": "2026-04-25T19:57:30.899Z",
+      "clientId": 9,
+      "type": "payment_simulated",
+      "payload": {
+        "amount": 150000,
+        "currency": "eur"
+      }
+    },
+    {
+      "id": "act_1777147050926_oksv6",
+      "ts": "2026-04-25T19:57:30.926Z",
+      "clientId": 1,
+      "type": "payment_simulated",
+      "payload": {
+        "amount": 15000,
+        "currency": "eur"
+      }
+    },
+    {
+      "id": "act_1777147050955_kmelk",
+      "ts": "2026-04-25T19:57:30.955Z",
+      "clientId": 11,
+      "type": "payment_simulated",
+      "payload": {
+        "amount": 150000,
+        "currency": "eur"
+      }
+    },
+    {
+      "id": "act_1777147054200_6xane",
+      "ts": "2026-04-25T19:57:34.200Z",
+      "clientId": 10,
+      "type": "payment_simulated",
+      "payload": {
+        "amount": 150000,
+        "currency": "eur"
+      }
+    },
+    {
+      "id": "act_1777147054224_6t4g4",
+      "ts": "2026-04-25T19:57:34.224Z",
+      "clientId": 1,
+      "type": "payment_simulated",
+      "payload": {
+        "amount": 15000,
+        "currency": "eur"
+      }
+    },
+    {
+      "id": "act_1777147054250_imtrq",
+      "ts": "2026-04-25T19:57:34.250Z",
+      "clientId": 8,
+      "type": "payment_simulated",
+      "payload": {
+        "amount": 150000,
+        "currency": "eur"
+      }
+    },
+    {
+      "id": "act_1777147054273_x7n8f",
+      "ts": "2026-04-25T19:57:34.274Z",
+      "clientId": 11,
+      "type": "payment_simulated",
+      "payload": {
+        "amount": 150000,
+        "currency": "eur"
+      }
+    },
+    {
+      "id": "act_1777147054302_py1hb",
+      "ts": "2026-04-25T19:57:34.302Z",
+      "clientId": 7,
+      "type": "payment_simulated",
+      "payload": {
+        "amount": 150000,
+        "currency": "eur"
+      }
+    },
+    {
+      "id": "act_1777147054336_bfbgn",
+      "ts": "2026-04-25T19:57:34.336Z",
+      "clientId": 10,
+      "type": "payment_simulated",
+      "payload": {
+        "amount": 150000,
+        "currency": "eur"
+      }
+    },
+    {
+      "id": "act_1777147054364_6tlhr",
+      "ts": "2026-04-25T19:57:34.364Z",
+      "clientId": 10,
+      "type": "payment_simulated",
+      "payload": {
+        "amount": 150000,
+        "currency": "eur"
+      }
+    },
+    {
+      "id": "act_1777147054401_sizvf",
+      "ts": "2026-04-25T19:57:34.401Z",
+      "clientId": 10,
+      "type": "payment_simulated",
+      "payload": {
+        "amount": 150000,
+        "currency": "eur"
+      }
+    },
+    {
+      "id": "act_1777147054568_2givo",
+      "ts": "2026-04-25T19:57:34.568Z",
+      "clientId": 9,
+      "type": "payment_simulated",
+      "payload": {
+        "amount": 150000,
+        "currency": "eur"
+      }
+    },
+    {
+      "id": "act_1777147054570_kjw86",
+      "ts": "2026-04-25T19:57:34.570Z",
+      "clientId": 10,
+      "type": "payment_simulated",
+      "payload": {
+        "amount": 150000,
+        "currency": "eur"
+      }
+    },
+    {
+      "id": "act_1777147054796_0ltc7",
+      "ts": "2026-04-25T19:57:34.796Z",
+      "clientId": 7,
+      "type": "payment_simulated",
+      "payload": {
+        "amount": 150000,
+        "currency": "eur"
+      }
+    },
+    {
+      "id": "act_1777147054798_69q66",
+      "ts": "2026-04-25T19:57:34.798Z",
+      "clientId": 1,
+      "type": "payment_simulated",
+      "payload": {
+        "amount": 15000,
+        "currency": "eur"
+      }
+    },
+    {
+      "id": "act_1777147054947_s7vbt",
+      "ts": "2026-04-25T19:57:34.947Z",
+      "clientId": 9,
+      "type": "payment_simulated",
+      "payload": {
+        "amount": 150000,
+        "currency": "eur"
+      }
+    },
+    {
+      "id": "act_1777147055068_wfvwp",
+      "ts": "2026-04-25T19:57:35.068Z",
+      "clientId": 11,
+      "type": "payment_simulated",
+      "payload": {
+        "amount": 150000,
+        "currency": "eur"
+      }
+    },
+    {
+      "id": "act_1777147055173_p6tdy",
+      "ts": "2026-04-25T19:57:35.173Z",
+      "clientId": 1,
+      "type": "payment_simulated",
+      "payload": {
+        "amount": 15000,
+        "currency": "eur"
+      }
+    },
+    {
+      "id": "act_1777147055228_z4n0m",
+      "ts": "2026-04-25T19:57:35.228Z",
+      "clientId": 1,
+      "type": "payment_simulated",
+      "payload": {
+        "amount": 15000,
+        "currency": "eur"
+      }
+    },
+    {
+      "id": "act_1777147055346_3b9wd",
+      "ts": "2026-04-25T19:57:35.346Z",
+      "clientId": 10,
+      "type": "payment_simulated",
+      "payload": {
+        "amount": 150000,
+        "currency": "eur"
+      }
+    },
+    {
+      "id": "act_1777147055404_ikdi8",
+      "ts": "2026-04-25T19:57:35.404Z",
+      "clientId": 7,
+      "type": "payment_simulated",
+      "payload": {
+        "amount": 150000,
+        "currency": "eur"
+      }
+    },
+    {
+      "id": "act_1777147059465_jem1v",
+      "ts": "2026-04-25T19:57:39.465Z",
+      "clientId": 8,
+      "type": "payment_simulated",
+      "payload": {
+        "amount": 150000,
+        "currency": "eur"
+      }
+    },
+    {
+      "id": "act_1777147059710_5vu3j",
+      "ts": "2026-04-25T19:57:39.710Z",
+      "clientId": 10,
+      "type": "payment_simulated",
+      "payload": {
+        "amount": 150000,
+        "currency": "eur"
+      }
+    },
+    {
+      "id": "act_1777147060722_9jkmc",
+      "ts": "2026-04-25T19:57:40.722Z",
+      "clientId": 10,
+      "type": "payment_simulated",
+      "payload": {
+        "amount": 150000,
+        "currency": "eur"
+      }
+    },
+    {
+      "id": "act_1777147062313_n7uid",
+      "ts": "2026-04-25T19:57:42.313Z",
+      "clientId": 1,
+      "type": "payment_simulated",
+      "payload": {
+        "amount": 15000,
+        "currency": "eur"
+      }
+    },
+    {
+      "id": "act_1777147063125_y2jlo",
+      "ts": "2026-04-25T19:57:43.125Z",
+      "clientId": 7,
+      "type": "payment_simulated",
+      "payload": {
+        "amount": 150000,
+        "currency": "eur"
+      }
+    },
+    {
+      "id": "act_1777147064176_kjz6l",
+      "ts": "2026-04-25T19:57:44.176Z",
+      "clientId": 10,
+      "type": "payment_simulated",
+      "payload": {
+        "amount": 150000,
+        "currency": "eur"
+      }
+    },
+    {
+      "id": "act_1777147064918_rfu7c",
+      "ts": "2026-04-25T19:57:44.918Z",
+      "clientId": 9,
+      "type": "payment_simulated",
+      "payload": {
+        "amount": 150000,
+        "currency": "eur"
+      }
+    },
+    {
+      "id": "act_1777147064935_y9622",
+      "ts": "2026-04-25T19:57:44.935Z",
+      "clientId": 10,
+      "type": "payment_simulated",
+      "payload": {
+        "amount": 150000,
+        "currency": "eur"
+      }
+    },
+    {
+      "id": "act_1777147064962_a2v4e",
+      "ts": "2026-04-25T19:57:44.962Z",
+      "clientId": 7,
+      "type": "payment_simulated",
+      "payload": {
+        "amount": 150000,
+        "currency": "eur"
+      }
+    },
+    {
+      "id": "act_1777147064975_ngatl",
+      "ts": "2026-04-25T19:57:44.975Z",
+      "clientId": 10,
+      "type": "payment_simulated",
+      "payload": {
+        "amount": 150000,
+        "currency": "eur"
+      }
+    },
+    {
+      "id": "act_1777147064997_frfj5",
+      "ts": "2026-04-25T19:57:44.997Z",
+      "clientId": 8,
+      "type": "payment_simulated",
+      "payload": {
+        "amount": 150000,
+        "currency": "eur"
+      }
+    },
+    {
+      "id": "act_1777147065018_aeglr",
+      "ts": "2026-04-25T19:57:45.018Z",
+      "clientId": 7,
+      "type": "payment_simulated",
+      "payload": {
+        "amount": 150000,
+        "currency": "eur"
+      }
+    },
+    {
+      "id": "act_1777147065035_lcadh",
+      "ts": "2026-04-25T19:57:45.035Z",
+      "clientId": 9,
+      "type": "payment_simulated",
+      "payload": {
+        "amount": 150000,
+        "currency": "eur"
+      }
+    },
+    {
+      "id": "act_1777147065060_na8bd",
+      "ts": "2026-04-25T19:57:45.060Z",
+      "clientId": 10,
+      "type": "payment_simulated",
+      "payload": {
+        "amount": 150000,
+        "currency": "eur"
+      }
+    },
+    {
+      "id": "act_1777149346189_uzulx",
+      "ts": "2026-04-25T20:35:46.189Z",
+      "clientId": 8,
+      "type": "payment_simulated",
+      "payload": {
+        "amount": 150000,
+        "currency": "eur"
+      }
+    },
+    {
+      "id": "act_1777149351019_gsenb",
+      "ts": "2026-04-25T20:35:51.019Z",
+      "clientId": 9,
+      "type": "payment_simulated",
+      "payload": {
+        "amount": 150000,
+        "currency": "eur"
+      }
+    },
+    {
+      "id": "act_1777149614312_qsis1",
+      "ts": "2026-04-25T20:40:14.312Z",
+      "clientId": 7,
+      "type": "payment_simulated",
+      "payload": {
+        "amount": 150000,
+        "currency": "eur"
+      }
+    },
+    {
+      "id": "act_1777149630582_0378q",
+      "ts": "2026-04-25T20:40:30.582Z",
+      "clientId": 8,
+      "type": "payment_simulated",
+      "payload": {
+        "amount": 150000,
+        "currency": "eur"
+      }
+    },
+    {
+      "id": "act_1777210021963_6f0mu",
+      "ts": "2026-04-26T13:27:01.963Z",
+      "clientId": 11,
+      "type": "status_changed",
+      "payload": {
+        "from": "en-cours",
+        "to": "prospect"
+      }
+    }
+  ],
+  "nextClientId": 12,
+  "emailTemplates": [
+    {
+      "id": "tpl_1777133612007_j27h",
+      "name": "Nouveau template",
+      "subject": "Bonjour {prenom}",
+      "html": "<!DOCTYPE html>\n<html lang=\"fr\">\n<head><meta charset=\"UTF-8\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\"><title>Newsletter CKR</title></head>\n<body style=\"margin:0;padding:0;background-color:#edf0f5;font-family:Arial,Helvetica,sans-serif;\">\n<table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"background-color:#edf0f5;\"><tr><td align=\"center\" style=\"padding:32px 10px;\">\n<div style=\"display:none;font-size:1px;color:#edf0f5;line-height:1px;max-height:0px;max-width:0px;opacity:0;overflow:hidden;\">Votre guide CKR Fermetures pour la sécurité des quais ce printemps.</div>\n<table role=\"presentation\" width=\"600\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"max-width:600px;width:100%;\">\n<tr><td style=\"padding:28px 40px;background-color:#ffffff;border-radius:8px 8px 0 0;\"><table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\"><tr><td valign=\"middle\" width=\"50%\"><a href=\"https://www.ckr-fermetures.fr/\" target=\"_blank\" style=\"text-decoration:none;\"><img src=\"https://www.ckr-fermetures.fr/logo-ckr-fermeture.png\" alt=\"CKR Fermetures\" width=\"160\" style=\"display:block;height:auto;max-width:160px;border:0;\" /></a></td><td valign=\"middle\" width=\"50%\" align=\"right\"><span style=\"font-family:Arial,sans-serif;font-size:12px;color:#8a9bb5;letter-spacing:2px;text-transform:uppercase;\">Avril 2026</span></td></tr></table></td></tr>\n<tr><td style=\"height:3px;background-color:#1a2b4a;font-size:0;line-height:0;\"> </td></tr>\n<tr><td style=\"background-color:#1a2b4a;\"><img src=\"https://image.pollinations.ai/prompt/Industrial%20loading%20dock%20with%20a%20large%20sectional%20door%2C%20forklift%20operating%2C%20spring%20light%2C%20steel%20blue%20tones%2C%20documentary%20style?width=1200&height=500&nologo=true\" alt=\"\" width=\"600\" style=\"display:block;width:100%;height:auto;border:0;\" /></td></tr>\n<tr><td style=\"background-color:#1a2b4a;padding:36px 40px 40px 40px;\"><table role=\"presentation\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"margin-bottom:20px;\"><tr><td style=\"width:48px;height:3px;background-color:#ffffff;font-size:0;line-height:0;\"> </td></tr></table><h1 style=\"margin:0 0 16px 0;font-family:Georgia,serif;font-size:30px;font-weight:400;line-height:1.2;color:#ffffff;\">Sécurité des quais de chargement:\nVotre guide du printemps 2026</h1><p style=\"margin:0;font-family:Arial,sans-serif;font-size:14px;line-height:1.7;color:#8fa3c0;\">Cher client, votre contrat de maintenance avec CKR Fermetures vous garantit une tranquillité d'esprit. Ce mois-ci, nous abordons les vérifications essentielles pour un printemps sécurisé sur vos quais.</p></td></tr>\n<tr><td style=\"background-color:#ffffff;\">\n<table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\"><tr><td style=\"padding:40px 40px 0 40px;\"><table role=\"presentation\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"margin-bottom:14px;\"><tr><td style=\"width:28px;height:28px;background-color:#1a2b4a;border-radius:50%;text-align:center;line-height:28px;\"><span style=\"font-family:Georgia,serif;font-size:13px;color:#ffffff;font-weight:bold;\">1</span></td><td style=\"padding-left:12px;\"><span style=\"font-family:Arial,sans-serif;font-size:11px;color:#8a9bb5;text-transform:uppercase;letter-spacing:1.5px;font-weight:bold;\">Maintenance</span></td></tr></table><h2 style=\"margin:0 0 12px 0;font-family:Georgia,serif;font-size:22px;font-weight:400;line-height:1.3;color:#1a2b4a;\">Contrôle visuel des équipements</h2><p style=\"margin:0;font-family:Arial,sans-serif;font-size:14px;line-height:1.8;color:#4a5568;\">Avec l'arrivée du printemps, il est crucial de vérifier l'état général de vos portes sectionnelles et équipements de quai. Inspectez les ressorts de torsion, les câbles acier et les galets pour détecter toute usure ou corrosion. Un contrôle régulier prévient les défaillances et prolonge la durée de vie de vos installations, garantissant ainsi la sécurité de vos opérateurs.</p></td></tr></table>\n<table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\"><tr><td style=\"padding:28px 40px;\"><table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\"><tr><td style=\"height:1px;background-color:#edf0f5;font-size:0;line-height:0;\"> </td></tr></table></td></tr></table>\n<table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\"><tr><td style=\"padding:0 40px;\"><table role=\"presentation\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"margin-bottom:14px;\"><tr><td style=\"width:28px;height:28px;background-color:#2c3e6b;border-radius:50%;text-align:center;line-height:28px;\"><span style=\"font-family:Georgia,serif;font-size:13px;color:#ffffff;font-weight:bold;\">2</span></td><td style=\"padding-left:12px;\"><span style=\"font-family:Arial,sans-serif;font-size:11px;color:#8a9bb5;text-transform:uppercase;letter-spacing:1.5px;font-weight:bold;\">Sécurité</span></td></tr></table><h2 style=\"margin:0 0 12px 0;font-family:Georgia,serif;font-size:22px;font-weight:400;line-height:1.3;color:#1a2b4a;\">Fonctionnalités de sécurité essentielles</h2><p style=\"margin:0;font-family:Arial,sans-serif;font-size:14px;line-height:1.8;color:#4a5568;\">La sécurité des quais de chargement repose sur le bon fonctionnement des cellules photoélectriques et des barres palpeuses de vos portes rapides et rideaux métalliques. Assurez-vous également que les pare-chute et la motorisation de vos équipements sont opérationnels. Ces dispositifs sont essentiels pour la protection de votre personnel et le respect de la norme NF EN 13241.</p></td></tr></table>\n<table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\"><tr><td style=\"padding:28px 40px;\"><table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\"><tr><td style=\"height:1px;background-color:#edf0f5;font-size:0;line-height:0;\"> </td></tr></table></td></tr></table>\n<table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\"><tr><td style=\"padding:0 40px;\"><table role=\"presentation\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"margin-bottom:14px;\"><tr><td style=\"width:28px;height:28px;background-color:#1a2b4a;border-radius:50%;text-align:center;line-height:28px;\"><span style=\"font-family:Georgia,serif;font-size:13px;color:#ffffff;font-weight:bold;\">3</span></td><td style=\"padding-left:12px;\"><span style=\"font-family:Arial,sans-serif;font-size:11px;color:#8a9bb5;text-transform:uppercase;letter-spacing:1.5px;font-weight:bold;\">Performance</span></td></tr></table><h2 style=\"margin:0 0 12px 0;font-family:Georgia,serif;font-size:22px;font-weight:400;line-height:1.3;color:#1a2b4a;\">Optimisation des équipements de quai</h2><p style=\"margin:0;font-family:Arial,sans-serif;font-size:14px;line-height:1.8;color:#4a5568;\">Le printemps est le moment idéal pour s'assurer de la performance de vos niveleurs, sas d'étanchéité et butoirs. Vérifiez l'alignement des rails de guidage et l'intégrité du tablier de vos portes. Un entretien préventif régulier, inclus dans votre contrat avec CKR Fermetures, assure l'efficacité et la conformité de vos installations.</p></td></tr></table>\n</td></tr>\n<tr><td style=\"background-color:#ffffff;padding:32px 40px 0 40px;\"><table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"background-color:#0d1b2a;border-radius:8px;overflow:hidden;\"><tr><td style=\"border-left:4px solid #5b7fad;padding:30px 32px;\"><p style=\"margin:0 0 6px 0;font-family:Arial,sans-serif;font-size:11px;color:#8fa3c0;text-transform:uppercase;letter-spacing:2px;font-weight:bold;\">Le conseil de nos techniciens</p><p style=\"margin:0;font-family:Georgia,serif;font-size:17px;line-height:1.65;color:#d0dae8;font-style:italic;\">N'oubliez pas l'importance d'une lubrification adéquate des pièces mobiles. Cela réduit l'usure et garantit une opération fluide de vos systèmes.</p></td></tr></table></td></tr>\n<tr><td style=\"background-color:#ffffff;padding:36px 40px 40px 40px;\"><table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\"><tr><td align=\"center\"><table role=\"presentation\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"margin:0 auto;\"><tr><td align=\"center\" style=\"border-radius:50px;background-color:#2c3e6b;\"><a href=\"https://www.ckr-fermetures.fr/devis/\" target=\"_blank\" style=\"display:inline-block;padding:16px 40px;font-family:Arial,sans-serif;font-size:14px;font-weight:600;color:#ffffff;text-decoration:none;\">Planifier ma visite →</a></td></tr></table><p style=\"margin:20px 0 0 0;font-family:Arial,sans-serif;font-size:13px;color:#8a9bb5;\">Ou contactez-nous au <a href=\"tel:0344576605\" style=\"color:#1a2b4a;text-decoration:none;font-weight:700;\">03 44 57 66 05</a></p></td></tr></table></td></tr>\n<tr><td style=\"padding:32px 40px;background-color:#ffffff;\"><table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\"><tr><td valign=\"top\" width=\"55%\"><a href=\"https://www.ckr-fermetures.fr/\" target=\"_blank\" style=\"text-decoration:none;\"><img src=\"https://www.ckr-fermetures.fr/logo-ckr-fermeture.png\" alt=\"CKR Fermetures\" width=\"120\" style=\"display:block;height:auto;max-width:120px;border:0;margin-bottom:14px;\" /></a><p style=\"margin:0;font-family:Arial,sans-serif;font-size:12px;color:#6b7a8d;line-height:1.7;\">CKR Fermetures — SARL<br>892 Rue Basse, 60700 Pontpoint<br>Oise - Hauts-de-France</p></td><td valign=\"top\" width=\"45%\" style=\"padding-left:20px;\"><p style=\"margin:0 0 12px 0;font-family:Arial,sans-serif;font-size:11px;color:#8a9bb5;text-transform:uppercase;letter-spacing:1px;\">Contact</p><p style=\"margin:0;font-family:Arial,sans-serif;font-size:13px;line-height:2.2;\"><a href=\"tel:0344576605\" style=\"color:#1a2b4a;text-decoration:none;font-weight:bold;\">03 44 57 66 05</a><br><a href=\"mailto:contact@ckr-fermetures.fr\" style=\"color:#4a5568;text-decoration:none;\">contact@ckr-fermetures.fr</a><br><a href=\"https://www.ckr-fermetures.fr/\" style=\"color:#2c3e6b;text-decoration:none;font-weight:bold;\">www.ckr-fermetures.fr</a></p></td></tr></table></td></tr>\n<tr><td style=\"padding:20px 40px;background-color:#f4f6f9;border-radius:0 0 8px 8px;\"><p style=\"margin:0;font-family:Arial,sans-serif;font-size:11px;color:#8a9bb5;line-height:1.8;text-align:center;\">Vous recevez cet email car vous etes client de CKR Fermetures.<br><a href=\"{{ unsubscribe }}\" style=\"color:#2c3e6b;text-decoration:underline;\">Se desinscrire</a> - Concu par <a href=\"https://nerixi.fr/\" style=\"color:#b0bec5;text-decoration:none;\">Nerixi</a></p></td></tr>\n</table></td></tr></table>\n</body></html>",
+      "createdAt": "2026-04-25T16:13:45.837Z",
+      "updatedAt": "2026-04-25T16:13:45.837Z"
+    }
+  ],
+  "linkedinPosts": [
+    {
+      "id": "lipost_1777142907327_4ox9",
+      "type": "hook",
+      "sujet": "automatisations complète pme",
+      "contenu": "Votre PME est-elle ralentie par les tâches répétitives ?\nEt si vous libériez un temps précieux pour vos équipes ?\nL'automatisation IA est la solution.\n\nSaviez-vous que 25% du temps de vos collaborateurs est dédié à des processus man",
+      "createdAt": "2026-04-25T18:48:27.327Z",
+      "updatedAt": "2026-04-25T18:48:27.327Z"
+    },
+    {
+      "id": "lipost_1777137803978_xvz7",
+      "type": "bofu",
+      "sujet": "martin a recuper 23 K",
+      "contenu": "Marre des tâches floues et incertaines ? ❓\nVos équipes passent trop de temps sur l'indéfini ?\nCela freine votre productivité et votre croissance.\n\nBeaucoup de PME souffrent de processus mal définis.\nCela entraîne des erreurs et une perte de temps précieuse.\nEn moyenne, 10 à 15% du temps de travail est gaspillé.\nNerixi met fin à cette incertitude.\nNotre IA automatise vos opérations clés.\nChaque étape devient claire, précise, optimisée. ✅\nVos collaborateurs se concentrent enfin sur l'essentiel.\nFini les approximations, place à l'efficacité.\n\nPrêt à transformer l'incertitude en succès ?\n\n#AutomatisationIA #PMEFrançaise #Effic",
+      "createdAt": "2026-04-25T17:23:23.978Z",
+      "updatedAt": "2026-04-25T17:23:23.978Z"
+    }
+  ],
+  "prospects": []
+}

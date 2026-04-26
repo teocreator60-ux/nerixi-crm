@@ -1,5 +1,6 @@
 'use client'
 import { useState } from 'react'
+import { apiFetch } from '@/lib/apiFetch'
 
 const SECTEURS = ['Commerce', 'Logistique', 'BTP', 'Immobilier', 'Transport', 'Industrie', 'Services', 'Tech', 'Santé', 'Éducation', 'Autre']
 const STATUTS = [
@@ -63,7 +64,7 @@ export default function ClientForm({ client, onClose, onSaved, onDeleted }) {
       }
       const url = isEdit ? `/api/clients/${client.id}` : '/api/clients'
       const method = isEdit ? 'PUT' : 'POST'
-      const res = await fetch(url, {
+      const res = await apiFetch(url, {
         method,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
@@ -74,7 +75,7 @@ export default function ClientForm({ client, onClose, onSaved, onDeleted }) {
 
       if (!isEdit && autoOnboard && savedClient?.id) {
         try {
-          const obRes = await fetch('/api/onboarding/trigger', {
+          const obRes = await apiFetch('/api/onboarding/trigger', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ clientId: savedClient.id, triggeredBy: 'auto_on_create' }),
@@ -95,7 +96,7 @@ export default function ClientForm({ client, onClose, onSaved, onDeleted }) {
   const handleDelete = async () => {
     setSaving(true)
     try {
-      const res = await fetch(`/api/clients/${client.id}`, { method: 'DELETE' })
+      const res = await apiFetch(`/api/clients/${client.id}`, { method: 'DELETE' })
       if (!res.ok) throw new Error('Suppression échouée')
       onDeleted?.(client.id)
       onClose()
@@ -106,7 +107,7 @@ export default function ClientForm({ client, onClose, onSaved, onDeleted }) {
   }
 
   return (
-    <div className="modal-backdrop" onClick={onClose} style={{ zIndex: 70 }}>
+    <div className="modal-backdrop" onClick={onClose} style={{ zIndex: 160 }}>
       <div className="card modal-card" onClick={e => e.stopPropagation()} style={{ maxWidth: 660 }}>
         <button onClick={onClose} className="modal-close">✕</button>
         <p style={{ fontWeight: 700, fontSize: 18, marginBottom: 4 }}>{isEdit ? 'Modifier le client' : 'Nouveau client'}</p>

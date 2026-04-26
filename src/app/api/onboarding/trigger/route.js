@@ -96,6 +96,11 @@ export async function POST(request) {
     payload: { status: errorMsg ? 'failed' : 'sent', error: errorMsg, triggeredBy: payload.triggeredBy || 'manual' },
   })
 
+  if (!errorMsg) {
+    const { runWorkflowsForEvent } = await import('@/lib/workflows')
+    runWorkflowsForEvent('onboarding.triggered', { client }).catch(() => {})
+  }
+
   if (errorMsg) {
     return Response.json({ error: errorMsg, client: updated }, { status: 502 })
   }

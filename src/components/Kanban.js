@@ -8,7 +8,7 @@ const COLUMNS = [
   { id: 'churné',   label: 'Churné',   color: '#b89cff', icon: '⚰️' },
 ]
 
-export default function Kanban({ clients, onChangeStatus, onOpenClient, onTimeline }) {
+export default function Kanban({ clients, onChangeStatus, onOpenClient, onTimeline, onConvertProspect }) {
   const [dragId, setDragId] = useState(null)
   const [overCol, setOverCol] = useState(null)
   const [transition, setTransition] = useState(null)
@@ -17,6 +17,7 @@ export default function Kanban({ clients, onChangeStatus, onOpenClient, onTimeli
     setDragId(client.id)
     e.dataTransfer.effectAllowed = 'move'
     e.dataTransfer.setData('text/plain', String(client.id))
+    e.dataTransfer.setData('application/x-nerixi-client', String(client.id))
     setTimeout(() => {
       const el = document.querySelector(`[data-kanban-card="${client.id}"]`)
       if (el) el.classList.add('is-dragging')
@@ -38,7 +39,20 @@ export default function Kanban({ clients, onChangeStatus, onOpenClient, onTimeli
   const handleDrop = async (e, colId) => {
     e.preventDefault()
     setOverCol(null)
-    const id = Number(e.dataTransfer.getData('text/plain'))
+
+    // Prospect drag-drop → conversion auto
+    const prospectId = e.dataTransfer.getData('application/x-nerixi-prospect')
+    if (prospectId) {
+      const toCol = COLUMNS.find(c => c.id === colId)
+      setTransition({ from: { label: 'Prospect', icon: '🎯', color: '#fac775' }, to: toCol, entreprise: 'Conversion en client…' })
+      setTimeout(() => setTransition(null), 2800)
+      await onConvertProspect?.(prospectId, colId)
+      return
+    }
+
+    // Client drag-drop classique
+    const idStr = e.dataTransfer.getData('application/x-nerixi-client') || e.dataTransfer.getData('text/plain')
+    const id = Number(idStr)
     if (!id) return
     const client = clients.find(c => c.id === id)
     if (!client || client.statut === colId) return

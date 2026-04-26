@@ -6,6 +6,10 @@ export async function POST(request) {
       return Response.json({ error: 'Champs manquants' }, { status: 400 })
     }
 
+    // Find matching client + log outbound email (best effort)
+    const { findClientByEmail, saveOutboundEmail, logActivity } = await import('@/lib/store')
+    const matchClient = findClientByEmail(to)
+
     const emailBody = {
       sender: {
         name: process.env.BREVO_SENDER_NAME || 'Nerixi',
@@ -65,6 +69,21 @@ export async function POST(request) {
       const error = await response.json()
       return Response.json({ error: error.message || 'Erreur Brevo' }, { status: 500 })
     }
+
+    try {
+      saveOutboundEmail({
+        clientId: matchClient?.id || null,
+        toEmail: to, toName: toName || '',
+        subject, content,
+      })
+      if (matchClient) {
+        logActivity({
+          clientId: matchClient.id,
+          type: 'email_sent',
+          payload: { subject, to },
+        })
+      }
+    } catch {}
 
     return Response.json({ success: true, message: 'Email envoyé avec succès' })
 

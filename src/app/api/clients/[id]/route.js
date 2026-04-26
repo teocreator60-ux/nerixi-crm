@@ -60,6 +60,12 @@ export async function PUT(request, { params }) {
     let webhook = null
     if (result.statusChanged) {
       webhook = await fireStatusWebhook(result.client, result.previousStatus)
+      const { runWorkflowsForEvent } = await import('@/lib/workflows')
+      runWorkflowsForEvent('client.status_changed', {
+        client: result.client,
+        from: result.previousStatus,
+        to: result.client.statut,
+      }).catch(() => {})
     }
 
     return Response.json({

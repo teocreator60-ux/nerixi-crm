@@ -1,6 +1,7 @@
 import { cookies } from 'next/headers'
 import { verifyToken, AUTH_COOKIE } from '@/lib/auth'
 import { getClients, createClient } from '@/lib/store'
+import { runWorkflowsForEvent } from '@/lib/workflows'
 
 function requireAuth() {
   const token = cookies().get(AUTH_COOKIE)?.value
@@ -17,6 +18,7 @@ export async function POST(request) {
   try {
     const payload = await request.json()
     const client = createClient(payload)
+    runWorkflowsForEvent('client.created', { client }).catch(() => {})
     return Response.json({ client })
   } catch (e) {
     return Response.json({ error: e.message }, { status: 400 })

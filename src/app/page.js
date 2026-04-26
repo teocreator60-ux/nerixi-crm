@@ -2,23 +2,50 @@
 import { useState, useEffect, useMemo } from 'react'
 import Login, { useAuth } from '@/components/Login'
 import Calendar from '@/components/Calendar'
-import { MRRChart, ClientGrowthChart, StatusBreakdown } from '@/components/Charts'
+import { MRRChart, ClientGrowthChart, StatusBreakdown, MRRForecastChart, CohortHeatmap, LTVCard } from '@/components/Charts'
 import ClientForm from '@/components/ClientForm'
 import PaymentTracking from '@/components/PaymentTracking'
 import CommandPalette from '@/components/CommandPalette'
 import Kanban from '@/components/Kanban'
 import { AtRiskPanel, HealthGauge, ClientHealthCard } from '@/components/HealthScore'
 import ClientTimeline from '@/components/ClientTimeline'
+import { RealtimeToastStack } from '@/components/RealtimeToast'
+import CountUp from '@/components/CountUp'
+import WorkflowBuilder from '@/components/WorkflowBuilder'
+import YearRecap from '@/components/YearRecap'
+import { fireConfettiFromElement, playChaching, isSoundEnabled, setSoundEnabled, fireGoldRain, fireStarBurst, fireFireworks, fireCheckmark } from '@/lib/effects'
+import AmbientBackground from '@/components/AmbientBackground'
+import EmptyState from '@/components/EmptyState'
+import { SkelClientCard, SkelStatsGrid, SkelGrid } from '@/components/Skeleton'
+import InlineEdit from '@/components/InlineEdit'
+import Attachments from '@/components/Attachments'
+import { apiFetch } from '@/lib/apiFetch'
+import { TaskList, UrgentTasksPanel } from '@/components/Tasks'
+import Prospection from '@/components/Prospection'
+import ClaudeChat from '@/components/ClaudeChat'
+import OnboardingChecklist from '@/components/OnboardingChecklist'
+import generateMonthlyReport from '@/components/MonthlyReport'
+import EmailTemplateEditor from '@/components/EmailTemplateEditor'
+import ListsManager from '@/components/ListsManager'
+import Composer from '@/components/Composer'
+import LinkedinGenerator from '@/components/LinkedinGenerator'
+import Pipeline from '@/components/Pipeline'
+import Inbox from '@/components/Inbox'
+import PaymentLinkButton from '@/components/PaymentLink'
+import VisitorPanel from '@/components/VisitorPanel'
 
 const TABS = [
-  { id: 'Dashboard', icon: '📊' },
-  { id: 'Clients',   icon: '👥' },
-  { id: 'Kanban',    icon: '🎯' },
-  { id: 'Agenda',    icon: '📅' },
-  { id: 'Suivi',     icon: '💰', label: 'Suivi paiements' },
-  { id: 'Stripe',    icon: '💳', label: 'Stripe' },
-  { id: 'Emails',    icon: '📧' },
-  { id: 'LinkedIn',  icon: '💼' },
+  { id: 'Dashboard',   icon: '📊' },
+  { id: 'Pipeline',    icon: '🎯' },
+  { id: 'Prospection', icon: '📥' },
+  { id: 'Clients',     icon: '👥' },
+  { id: 'Agenda',      icon: '📅' },
+  { id: 'Suivi',       icon: '💰', label: 'Suivi paiements' },
+  { id: 'Stripe',      icon: '💳', label: 'Stripe' },
+  { id: 'Workflows',   icon: '🤖', label: 'Automatisations' },
+  { id: 'Chat',        icon: '💬' },
+  { id: 'Emails',      icon: '📧' },
+  { id: 'LinkedIn',    icon: '💼' },
 ]
 
 const LINKEDIN_TEMPLATES = [
@@ -158,9 +185,9 @@ function formatDate(unix) {
          d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
 }
 
-function StatCard({ label, value, sub, icon }) {
+function StatCard({ label, value, sub, icon, dataAttr }) {
   return (
-    <div className="card fade-in-up" style={{ position: 'relative', overflow: 'hidden' }}>
+    <div className="card fade-in-up" {...(dataAttr ? { 'data-stat': dataAttr } : {})} style={{ position: 'relative', overflow: 'hidden' }}>
       <div style={{ position: 'absolute', top: -30, right: -30, width: 120, height: 120, background: 'radial-gradient(circle, rgba(0,200,120,0.12), transparent 70%)', borderRadius: '50%' }} />
       <div style={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
         <p style={{ fontSize: 12, color: 'var(--nerixi-muted)', textTransform: 'uppercase', letterSpacing: 0.6, fontWeight: 600 }}>{label}</p>
@@ -214,7 +241,7 @@ function ClientCard({ client, onClick, onEdit }) {
   )
 }
 
-function ClientDetail({ client, onClose, onEmail, onEdit, onOnboarding, onTimeline, stripePayments, events }) {
+function ClientDetail({ client, onClose, onEmail, onEdit, onOnboarding, onTimeline, stripePayments, events, tasks, onCreateTask, onUpdateTask, onDeleteTask, onClientPatch }) {
   const [onboardingState, setOnboardingState] = useState({ loading: false, error: '', success: false })
 
   const triggerOnboarding = async () => {
@@ -254,20 +281,57 @@ function ClientDetail({ client, onClose, onEmail, onEdit, onOnboarding, onTimeli
         </div>
 
         <div className="grid-3" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10, marginBottom: 18 }}>
-          {[
-            { label: 'MRR', value: `${client.mrr}€` },
-            { label: 'Installation', value: `${client.installation}€` },
-            { label: 'Avancement', value: `${client.avancement}%` },
-          ].map((it, i) => (
-            <div key={i} style={{ background: 'rgba(10,22,40,0.6)', border: '1px solid var(--nerixi-border)', borderRadius: 10, padding: '12px', textAlign: 'center' }}>
-              <p style={{ fontSize: 11, color: 'var(--nerixi-muted)', textTransform: 'uppercase', letterSpacing: 0.5 }}>{it.label}</p>
-              <p style={{ fontSize: 20, fontWeight: 700, color: 'var(--nerixi-accent)', marginTop: 4 }}>{it.value}</p>
-            </div>
-          ))}
+          <div style={{ background: 'rgba(10,22,40,0.6)', border: '1px solid var(--nerixi-border)', borderRadius: 10, padding: '12px', textAlign: 'center' }}>
+            <p style={{ fontSize: 11, color: 'var(--nerixi-muted)', textTransform: 'uppercase', letterSpacing: 0.5 }}>MRR</p>
+            <p style={{ fontSize: 20, fontWeight: 700, color: 'var(--nerixi-accent)', marginTop: 4 }}>
+              <InlineEdit value={client.mrr || 0} type="number" hint={false}
+                displayFormat={v => `${v}€`}
+                onSave={async (v) => { await onClientPatch?.(client.id, { mrr: Number(v) || 0 }) }} />
+            </p>
+          </div>
+          <div style={{ background: 'rgba(10,22,40,0.6)', border: '1px solid var(--nerixi-border)', borderRadius: 10, padding: '12px', textAlign: 'center' }}>
+            <p style={{ fontSize: 11, color: 'var(--nerixi-muted)', textTransform: 'uppercase', letterSpacing: 0.5 }}>Installation</p>
+            <p style={{ fontSize: 20, fontWeight: 700, color: 'var(--nerixi-accent)', marginTop: 4 }}>
+              <InlineEdit value={client.installation || 0} type="number" hint={false}
+                displayFormat={v => `${v}€`}
+                onSave={async (v) => { await onClientPatch?.(client.id, { installation: Number(v) || 0 }) }} />
+            </p>
+          </div>
+          <div style={{ background: 'rgba(10,22,40,0.6)', border: '1px solid var(--nerixi-border)', borderRadius: 10, padding: '12px', textAlign: 'center' }}>
+            <p style={{ fontSize: 11, color: 'var(--nerixi-muted)', textTransform: 'uppercase', letterSpacing: 0.5 }}>Avancement</p>
+            <p style={{ fontSize: 20, fontWeight: 700, color: 'var(--nerixi-accent)', marginTop: 4 }}>
+              <InlineEdit value={client.avancement || 0} type="number" hint={false}
+                displayFormat={v => `${v}%`}
+                onSave={async (v) => { await onClientPatch?.(client.id, { avancement: Number(v) || 0 }) }} />
+            </p>
+          </div>
         </div>
 
         <div style={{ marginBottom: 18 }}>
           <ClientHealthCard client={client} stripePayments={stripePayments || []} events={events || []} />
+        </div>
+
+        <div style={{ marginBottom: 18 }}>
+          <p style={{ fontSize: 11, color: 'var(--nerixi-muted)', marginBottom: 10, textTransform: 'uppercase', letterSpacing: 0.5, fontWeight: 600 }}>📋 Tâches</p>
+          <TaskList
+            tasks={(tasks || []).filter(t => t.clientId === client.id)}
+            clients={[client]}
+            onCreate={onCreateTask}
+            onUpdate={onUpdateTask}
+            onDelete={onDeleteTask}
+            showClient={false}
+            defaultClientId={client.id}
+            emptyText="Aucune tâche pour ce client."
+          />
+        </div>
+
+        <div style={{ marginBottom: 18, background: 'rgba(10,22,40,0.6)', border: '1px solid var(--nerixi-border)', borderRadius: 12, padding: 14 }}>
+          <OnboardingChecklist
+            client={client}
+            onUpdate={async (next) => {
+              await onClientPatch?.(client.id, { onboardingChecklist: next.onboardingChecklist })
+            }}
+          />
         </div>
 
         <div style={{ marginBottom: 18 }}>
@@ -295,12 +359,19 @@ function ClientDetail({ client, onClose, onEmail, onEdit, onOnboarding, onTimeli
           </div>
         )}
 
-        {client.prochainAction && (
-          <div style={{ background: 'linear-gradient(120deg, rgba(0,200,120,0.12), rgba(54,230,196,0.06))', border: '1px solid var(--nerixi-border)', borderRadius: 12, padding: 14, marginBottom: 18 }}>
-            <p style={{ fontSize: 11, color: 'var(--nerixi-muted)', textTransform: 'uppercase', letterSpacing: 0.5, fontWeight: 600 }}>Prochaine action</p>
-            <p style={{ fontSize: 14, fontWeight: 600, color: 'var(--nerixi-accent)', marginTop: 4 }}>→ {client.prochainAction}</p>
-          </div>
-        )}
+        <div style={{ background: 'linear-gradient(120deg, rgba(0,200,120,0.12), rgba(54,230,196,0.06))', border: '1px solid var(--nerixi-border)', borderRadius: 12, padding: 14, marginBottom: 18 }}>
+          <p style={{ fontSize: 11, color: 'var(--nerixi-muted)', textTransform: 'uppercase', letterSpacing: 0.5, fontWeight: 600 }}>Prochaine action</p>
+          <p style={{ fontSize: 14, fontWeight: 600, color: 'var(--nerixi-accent)', marginTop: 4 }}>
+            → <InlineEdit value={client.prochainAction || ''} hint={false}
+              placeholder="Définir une prochaine action..."
+              onSave={async (v) => { await onClientPatch?.(client.id, { prochainAction: v }) }} />
+          </p>
+        </div>
+
+        <div style={{ marginBottom: 18 }}>
+          <p style={{ fontSize: 11, color: 'var(--nerixi-muted)', textTransform: 'uppercase', letterSpacing: 0.5, fontWeight: 600, marginBottom: 8 }}>📎 Pièces jointes</p>
+          <Attachments clientId={client.id} />
+        </div>
 
         <div style={{ background: 'rgba(10,22,40,0.6)', border: '1px solid var(--nerixi-border)', borderRadius: 12, padding: 14, marginBottom: 22 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10, gap: 10, flexWrap: 'wrap' }}>
@@ -333,8 +404,9 @@ function ClientDetail({ client, onClose, onEmail, onEdit, onOnboarding, onTimeli
         </div>
 
         <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
-          <button className="btn-primary" onClick={() => onEmail(client)} style={{ flex: 1, minWidth: 130 }}>
-            Envoyer un email
+          <PaymentLinkButton client={client} />
+          <button className="btn-secondary" onClick={() => onEmail(client)} style={{ flex: 1, minWidth: 130 }}>
+            ✉️ Email
           </button>
           <button onClick={() => onEdit(client)} className="btn-secondary" style={{ flex: 1, minWidth: 130 }}>
             ✎ Modifier
@@ -353,7 +425,7 @@ function ClientDetail({ client, onClose, onEmail, onEdit, onOnboarding, onTimeli
   )
 }
 
-function EmailModal({ client, onClose }) {
+function EmailModal({ client, onClose, customTemplates = [] }) {
   const [selectedTemplate, setSelectedTemplate] = useState(null)
   const [sujet, setSujet] = useState('')
   const [contenu, setContenu] = useState('')
@@ -399,7 +471,7 @@ function EmailModal({ client, onClose }) {
   }
 
   return (
-    <div className="modal-backdrop" onClick={onClose} style={{ zIndex: 60 }}>
+    <div className="modal-backdrop" onClick={onClose} style={{ zIndex: 155 }}>
       <div className="card modal-card" onClick={e => e.stopPropagation()}>
         <button onClick={onClose} className="modal-close">✕</button>
         <p style={{ fontSize: 17, fontWeight: 700, marginBottom: 4 }}>Email à {client.nom}</p>
@@ -409,15 +481,38 @@ function EmailModal({ client, onClose }) {
           <label>Template rapide</label>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             {EMAIL_TEMPLATES.map(t => (
-              <button key={t.id} onClick={() => applyTemplate(t)}
+              <button key={`std-${t.id}`} onClick={() => applyTemplate(t)}
                 style={{
-                  background: selectedTemplate === t.id ? 'rgba(0,200,120,0.15)' : 'rgba(10,22,40,0.6)',
-                  border: `1px solid ${selectedTemplate === t.id ? 'var(--nerixi-green)' : 'var(--nerixi-border)'}`,
+                  background: selectedTemplate === `std-${t.id}` ? 'rgba(0,200,120,0.15)' : 'rgba(10,22,40,0.6)',
+                  border: `1px solid ${selectedTemplate === `std-${t.id}` ? 'var(--nerixi-green)' : 'var(--nerixi-border)'}`,
                   borderRadius: 10, padding: '11px 14px', color: 'var(--nerixi-text)',
                   cursor: 'pointer', textAlign: 'left', fontSize: 13,
                   transition: 'all 0.2s ease'
                 }}>
-                {selectedTemplate === t.id ? '✓ ' : '○ '}{t.titre}
+                {selectedTemplate === `std-${t.id}` ? '✓ ' : '○ '}{t.titre}
+              </button>
+            ))}
+            {customTemplates.length > 0 && <p style={{ fontSize: 10.5, color: 'var(--nerixi-muted)', textTransform: 'uppercase', letterSpacing: 0.6, fontWeight: 700, marginTop: 8 }}>🎨 Mes templates HTML</p>}
+            {customTemplates.map(t => (
+              <button key={`custom-${t.id}`} onClick={() => {
+                const prenom = client.nom.split(' ')[0]
+                const mois = new Date().toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' })
+                const fillVars = (s) => (s || '').replace(/{(\w+)}/g, (m, k) => ({
+                  prenom, nom: client.nom, entreprise: client.entreprise || '', email: client.email || '', mois, mrr: client.mrr || 0,
+                }[k] ?? m))
+                setSujet(fillVars(t.subject))
+                setContenu(fillVars(t.html))
+                setSelectedTemplate(`custom-${t.id}`)
+              }}
+                style={{
+                  background: selectedTemplate === `custom-${t.id}` ? 'rgba(0,200,120,0.15)' : 'rgba(10,22,40,0.6)',
+                  border: `1px solid ${selectedTemplate === `custom-${t.id}` ? 'var(--nerixi-green)' : 'var(--nerixi-border)'}`,
+                  borderRadius: 10, padding: '11px 14px', color: 'var(--nerixi-text)',
+                  cursor: 'pointer', textAlign: 'left', fontSize: 13,
+                  transition: 'all 0.2s ease',
+                  display: 'flex', alignItems: 'center', gap: 8,
+                }}>
+                {selectedTemplate === `custom-${t.id}` ? '✓' : '🎨'} {t.name}
               </button>
             ))}
           </div>
@@ -444,7 +539,7 @@ function EmailModal({ client, onClose }) {
   )
 }
 
-function StripeView({ payments, mode, onRefresh }) {
+function StripeView({ payments, mode, onRefresh, onSimulate }) {
   const [filter, setFilter] = useState('all')
   const [refreshing, setRefreshing] = useState(false)
 
@@ -485,6 +580,11 @@ function StripeView({ payments, mode, onRefresh }) {
           <button onClick={load} className="btn-secondary" disabled={refreshing} style={{ padding: '8px 16px', fontSize: 13 }}>
             {refreshing ? <><span className="spinner" /> &nbsp;Sync…</> : '↻ Actualiser'}
           </button>
+          {onSimulate && (
+            <button onClick={onSimulate} className="btn-primary" style={{ padding: '8px 16px', fontSize: 13 }}>
+              🎲 Simuler un paiement
+            </button>
+          )}
         </div>
       </div>
 
@@ -574,6 +674,10 @@ export default function Home() {
   const [creatingClient, setCreatingClient] = useState(false)
   const [timelineClient, setTimelineClient] = useState(null)
   const [paletteOpen, setPaletteOpen] = useState(false)
+  const [recapOpen, setRecapOpen] = useState(false)
+  const [toasts, setToasts] = useState([])
+  const [rtConnected, setRtConnected] = useState(false)
+  const [soundOn, setSoundOnState] = useState(true)
   const [copiedId, setCopiedId] = useState(null)
   const [emailTab, setEmailTab] = useState('templates')
   const [emailTo, setEmailTo] = useState('')
@@ -584,6 +688,12 @@ export default function Home() {
 
   const [clients, setClients] = useState([])
   const [events, setEvents] = useState([])
+  const [tasks, setTasks] = useState([])
+  const [emailTemplates, setEmailTemplates] = useState([])
+  const [editingTemplate, setEditingTemplate] = useState(null)
+  const [lists, setLists] = useState([])
+  const [linkedinPosts, setLinkedinPosts] = useState([])
+  const [prospects, setProspects] = useState([])
   const [stripePayments, setStripePayments] = useState([])
   const [stripeMode, setStripeMode] = useState('demo')
   const [loadingData, setLoadingData] = useState(true)
@@ -597,20 +707,95 @@ export default function Home() {
 
   const refreshData = async () => {
     try {
-      const [cRes, eRes, sRes] = await Promise.all([
-        fetch('/api/clients',         { cache: 'no-store' }),
-        fetch('/api/events',          { cache: 'no-store' }),
-        fetch('/api/stripe/payments', { cache: 'no-store' }),
+      const [cRes, eRes, sRes, tRes, tplRes, lRes, liRes, prRes] = await Promise.all([
+        apiFetch('/api/clients',         { cache: 'no-store' }),
+        apiFetch('/api/events',          { cache: 'no-store' }),
+        apiFetch('/api/stripe/payments', { cache: 'no-store' }),
+        apiFetch('/api/tasks',           { cache: 'no-store' }),
+        apiFetch('/api/email-templates', { cache: 'no-store' }),
+        apiFetch('/api/lists',           { cache: 'no-store' }),
+        apiFetch('/api/linkedin/posts',  { cache: 'no-store' }),
+        apiFetch('/api/prospects',       { cache: 'no-store' }),
       ])
       const c = await cRes.json()
       const e = await eRes.json()
       const s = await sRes.json()
+      const t = await tRes.json()
+      const tpl = await tplRes.json()
+      const ll = await lRes.json()
+      const li = await liRes.json()
+      const pr = await prRes.json()
       setClients(c.clients || [])
       setEvents(e.events || [])
       setStripePayments(s.payments || [])
       setStripeMode(s.mode || 'demo')
+      setTasks(t.tasks || [])
+      setEmailTemplates(tpl.templates || [])
+      setLists(ll.lists || [])
+      setLinkedinPosts(li.posts || [])
+      setProspects(pr.prospects || [])
     } catch (e) {}
     setLoadingData(false)
+  }
+
+  const handleListSaved = (saved) => {
+    setLists(prev => {
+      const idx = prev.findIndex(l => l.id === saved.id)
+      if (idx === -1) return [...prev, saved]
+      const next = [...prev]; next[idx] = saved
+      return next
+    })
+  }
+  const handleListDeleted = (id) => setLists(prev => prev.filter(l => l.id !== id))
+
+  const handleTemplateSaved = (saved) => {
+    setEmailTemplates(prev => {
+      const idx = prev.findIndex(t => t.id === saved.id)
+      if (idx === -1) return [...prev, saved]
+      const next = [...prev]; next[idx] = saved
+      return next
+    })
+  }
+  const handleTemplateDeleted = (id) => {
+    setEmailTemplates(prev => prev.filter(t => t.id !== id))
+  }
+
+  const createTask = async (payload) => {
+    const res = await fetch('/api/tasks', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    })
+    const data = await res.json()
+    if (data.task) setTasks(prev => [...prev, data.task])
+    return data.task
+  }
+  const updateTaskFn = async (id, patch) => {
+    const before = tasks.find(t => t.id === id)
+    setTasks(prev => prev.map(t => t.id === id ? { ...t, ...patch } : t))
+    const res = await fetch(`/api/tasks/${id}`, {
+      method: 'PUT', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(patch),
+    })
+    const data = await res.json()
+    if (data.task) setTasks(prev => prev.map(t => t.id === id ? data.task : t))
+    // Confetti checkmark si tâche haute priorité passée à done
+    if (before && !before.done && patch.done && before.priority === 'high') {
+      fireCheckmark()
+    }
+  }
+  const deleteTaskFn = async (id) => {
+    await fetch(`/api/tasks/${id}`, { method: 'DELETE' })
+    setTasks(prev => prev.filter(t => t.id !== id))
+  }
+
+  const importProspectAsClient = async (data) => {
+    const res = await fetch('/api/clients', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    })
+    const result = await res.json()
+    if (result.client) handleClientSaved(result.client)
+    return result.client
   }
 
   const refreshStripe = async () => {
@@ -639,6 +824,114 @@ export default function Home() {
     return () => window.removeEventListener('keydown', handler)
   }, [authed])
 
+  useEffect(() => { setSoundOnState(isSoundEnabled()) }, [])
+
+  const pushToast = (toast) => {
+    const id = `t_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`
+    setToasts(prev => [...prev.slice(-4), { id, ...toast }])
+  }
+  const dismissToast = (id) => setToasts(prev => prev.filter(t => t.id !== id))
+
+  useEffect(() => {
+    if (!authed) return
+    const es = new EventSource('/api/realtime/stream')
+    es.onopen = () => setRtConnected(true)
+    es.onerror = () => setRtConnected(false)
+    es.onmessage = (msg) => {
+      try {
+        const data = JSON.parse(msg.data)
+        handleRealtimeEvent(data)
+      } catch {}
+    }
+    return () => { es.close() }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [authed])
+
+  const handleRealtimeEvent = (data) => {
+    if (data.type === 'connected') return
+
+    if (data.type === 'payment.received') {
+      const p = data.payment || {}
+      const c = data.client || {}
+      pushToast({
+        kind: 'success',
+        icon: '💰',
+        title: c.entreprise ? `Paiement de ${c.entreprise}` : 'Paiement reçu',
+        amount: p.amount,
+        sub: data.source === 'simulated' ? 'Simulation · ' + (c.nom || 'client inconnu') : (c.nom || p.customer_email || 'Stripe'),
+      })
+      // Detect first payment ever for this client → gold rain
+      const isFirstPayment = c.id && stripePayments.filter(x => {
+        const email = (x.customer_email || '').toLowerCase()
+        return x.status === 'succeeded' && email && c.email && email === c.email.toLowerCase()
+      }).length === 0
+      // Detect MRR milestone (multiple of 10k €)
+      const newMRR = (stats.mrr_total || 0) + (Number(c.mrr) || 0)
+      const milestones = [10000, 25000, 50000, 100000, 250000]
+      const crossedMilestone = milestones.find(m => stats.mrr_total < m && newMRR >= m)
+
+      if (isFirstPayment) {
+        fireGoldRain({ duration: 3500 })
+      } else if (crossedMilestone) {
+        fireStarBurst({ count: 80 })
+      } else {
+        const mrrEl = document.querySelector('[data-stat="mrr"]')
+        if (mrrEl) fireConfettiFromElement(mrrEl, { count: 110 })
+        else fireConfettiFromElement(null, { count: 110 })
+      }
+      if (isSoundEnabled()) playChaching()
+      // refresh stripe + clients to update charts/MRR
+      refreshStripe()
+      return
+    }
+    if (data.type === 'payment.failed') {
+      const c = data.client || {}
+      pushToast({
+        kind: 'fail', icon: '⚠️',
+        title: 'Paiement échoué', amount: data.payment?.amount,
+        sub: c.entreprise || data.payment?.customer_email || 'Stripe',
+      })
+      refreshStripe()
+      return
+    }
+    if (data.type === 'payment.refunded') {
+      const c = data.client || {}
+      pushToast({
+        kind: 'refund', icon: '↩️',
+        title: 'Remboursement', amount: data.payment?.amount,
+        sub: c.entreprise || 'Stripe',
+      })
+      refreshStripe()
+      return
+    }
+    if (data.type === 'visitor.hot') {
+      const pv = data.pageview || {}
+      const cli = pv.clientId ? clients.find(c => c.id === pv.clientId) : null
+      pushToast({
+        kind: 'success', icon: '🔥',
+        title: cli ? `${cli.entreprise} est sur ${pv.title || pv.url}` : `Visiteur identifié sur une page chaude`,
+        sub: pv.url,
+      })
+    }
+  }
+
+  const simulatePayment = async (clientId) => {
+    try {
+      await fetch('/api/realtime/simulate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(clientId ? { clientId } : {}),
+      })
+    } catch {}
+  }
+
+  const toggleSound = () => {
+    const next = !soundOn
+    setSoundOnState(next)
+    setSoundEnabled(next)
+    if (next) playChaching(0.1)
+  }
+
   const changeClientStatus = async (client, newStatus) => {
     setClients(prev => prev.map(c => c.id === client.id ? { ...c, statut: newStatus } : c))
     try {
@@ -649,6 +942,10 @@ export default function Home() {
       })
       const data = await res.json()
       if (data.client) handleClientSaved(data.client)
+      if (newStatus === 'actif' && client.statut !== 'actif') {
+        fireFireworks({ bursts: 4 })
+        if (isSoundEnabled()) playChaching(0.12)
+      }
     } catch {
       setClients(prev => prev.map(c => c.id === client.id ? { ...c, statut: client.statut } : c))
     }
@@ -658,6 +955,41 @@ export default function Home() {
     navigator.clipboard.writeText(text)
     setCopiedId(id)
     setTimeout(() => setCopiedId(null), 2000)
+  }
+
+  const [regeneratingId, setRegeneratingId] = useState(null)
+  const [regenStatus, setRegenStatus] = useState({})
+  const [regenContent, setRegenContent] = useState({}) // { [templateId]: 'new content' }
+
+  const regenerateLinkedIn = async (template) => {
+    setRegeneratingId(template.id)
+    setRegenStatus(s => ({ ...s, [template.id]: null }))
+    try {
+      const res = await fetch('/api/linkedin/regenerate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: template.titre,
+          topic: template.titre,
+          currentContent: regenContent[template.id] || template.contenu,
+        }),
+      })
+      const data = await res.json()
+      if (res.ok && data.success && data.content) {
+        setRegenContent(c => ({ ...c, [template.id]: data.content }))
+        setRegenStatus(s => ({ ...s, [template.id]: { ok: true } }))
+      } else {
+        setRegenStatus(s => ({ ...s, [template.id]: { ok: false, msg: data.error || 'Pas de contenu retourné' } }))
+      }
+    } catch (e) {
+      setRegenStatus(s => ({ ...s, [template.id]: { ok: false, msg: e.message } }))
+    }
+    setRegeneratingId(null)
+    setTimeout(() => setRegenStatus(s => { const c = { ...s }; delete c[template.id]; return c }), 4000)
+  }
+
+  const resetRegenerated = (id) => {
+    setRegenContent(c => { const n = { ...c }; delete n[id]; return n })
   }
 
   const sendDirectEmail = async () => {
@@ -732,12 +1064,9 @@ export default function Home() {
         backdropFilter: 'blur(8px)',
         position: 'sticky', top: 0, height: '100vh'
       }}>
-        <div style={{ padding: '0 22px 18px', borderBottom: '1px solid var(--nerixi-border)', marginBottom: 14, display: 'flex', alignItems: 'center', gap: 12 }}>
-          <div style={{ width: 38, height: 38, borderRadius: 10, background: 'linear-gradient(135deg, var(--nerixi-green), var(--nerixi-accent-2))', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, color: '#06101f', boxShadow: '0 6px 16px rgba(0,200,120,0.35)' }}>N</div>
-          <div>
-            <p className="logo-glow" style={{ fontSize: 16, margin: 0 }}>NERIXI</p>
-            <p style={{ fontSize: 10.5, color: 'var(--nerixi-muted)', marginTop: 1, textTransform: 'uppercase', letterSpacing: 1 }}>CRM Dashboard</p>
-          </div>
+        <div style={{ padding: '4px 22px 18px', borderBottom: '1px solid var(--nerixi-border)', marginBottom: 14 }}>
+          <img src="/logo-nerixi.jpg" alt="Nerixi" style={{ width: '100%', maxWidth: 160, height: 'auto', display: 'block', marginBottom: 6 }} />
+          <p style={{ fontSize: 10.5, color: 'var(--nerixi-muted)', textTransform: 'uppercase', letterSpacing: 1.5, fontWeight: 600 }}>CRM Dashboard</p>
         </div>
 
         <div style={{ display: 'flex', flexDirection: 'column' }}>
@@ -776,10 +1105,17 @@ export default function Home() {
         </button>
 
         <div style={{ marginTop: 'auto', padding: '18px 22px', borderTop: '1px solid var(--nerixi-border)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
-            <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'linear-gradient(135deg, var(--nerixi-green), var(--nerixi-accent-2))', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 700, color: '#06101f' }}>T</div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
+            <div style={{
+              width: 44, height: 44, borderRadius: '50%',
+              background: 'linear-gradient(135deg, var(--nerixi-green), var(--nerixi-accent-2))',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontSize: 20, fontWeight: 800, color: '#06101f',
+              flexShrink: 0,
+              boxShadow: '0 6px 18px rgba(0,200,120,0.45), inset 0 0 16px rgba(255,255,255,0.15)',
+            }}>T</div>
             <div style={{ flex: 1, minWidth: 0 }}>
-              <p style={{ fontSize: 12.5, fontWeight: 600, color: 'var(--nerixi-text)' }}>Téo</p>
+              <p style={{ fontSize: 13, fontWeight: 700, color: 'var(--nerixi-text)' }}>Téo</p>
               <p style={{ fontSize: 10.5, color: 'var(--nerixi-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>info@nerixi.com</p>
             </div>
           </div>
@@ -804,7 +1140,9 @@ export default function Home() {
       </aside>
 
       {/* Main content */}
-      <main className="main-content" style={{ flex: 1, padding: 36, overflowY: 'auto', minWidth: 0 }} key={activeTab}>
+      <main className="main-content page-transition" style={{ flex: 1, padding: 36, overflowY: 'auto', minWidth: 0, position: 'relative' }} key={activeTab}>
+        {activeTab === 'Dashboard' && <AmbientBackground density={28} />}
+        <div style={{ position: 'relative', zIndex: 1 }}>
 
         {loadingData && (
           <div style={{ position: 'fixed', top: 12, right: 16, zIndex: 30, fontSize: 11.5, color: 'var(--nerixi-muted)', display: 'flex', alignItems: 'center', gap: 6 }}>
@@ -815,9 +1153,27 @@ export default function Home() {
         {/* DASHBOARD */}
         {activeTab === 'Dashboard' && (
           <div className="fade-in">
-            <div style={{ marginBottom: 24 }}>
-              <h1 className="h1-page" style={{ fontSize: 28, fontWeight: 800, letterSpacing: -0.5 }}>Tableau de bord</h1>
-              <p style={{ color: 'var(--nerixi-muted)', marginTop: 6 }}>Vue d'ensemble de ton activité Nerixi</p>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 24, gap: 14, flexWrap: 'wrap' }}>
+              <div>
+                <h1 className="h1-page" style={{ fontSize: 28, fontWeight: 800, letterSpacing: -0.5 }}>Tableau de bord</h1>
+                <p style={{ color: 'var(--nerixi-muted)', marginTop: 6 }}>Vue d'ensemble de ton activité Nerixi</p>
+              </div>
+              <div className="dash-actions">
+                <span className={`live-dot ${rtConnected ? '' : 'is-off'}`}>{rtConnected ? 'Live' : 'Hors ligne'}</span>
+                <button onClick={toggleSound} title={soundOn ? 'Désactiver le son' : 'Activer le son'}
+                  style={{ background: 'rgba(10,22,40,0.6)', border: '1px solid var(--nerixi-border)', borderRadius: 10, padding: '8px 12px', color: 'var(--nerixi-muted)', cursor: 'pointer', fontSize: 14 }}>
+                  {soundOn ? '🔊' : '🔇'}
+                </button>
+                <button onClick={() => generateMonthlyReport({ clients, events, stripePayments })} className="btn-secondary" style={{ padding: '8px 14px', fontSize: 12.5 }}>
+                  📊 Rapport mensuel
+                </button>
+                <button onClick={() => simulatePayment()} className="btn-secondary" style={{ padding: '8px 14px', fontSize: 12.5 }}>
+                  🎲 Simuler un paiement
+                </button>
+                <button onClick={() => setRecapOpen(true)} className="btn-primary" style={{ padding: '8px 16px', fontSize: 13 }}>
+                  🎬 Rétrospective {new Date().getFullYear()}
+                </button>
+              </div>
             </div>
 
             {todayEvents.length > 0 && (
@@ -833,32 +1189,57 @@ export default function Home() {
               </div>
             )}
 
-            <div className="grid-3" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16, marginBottom: 22 }}>
-              <StatCard label="MRR Total"     value={`${stats.mrr_total.toLocaleString('fr-FR')}€`}          sub="Revenus récurrents/mois"     icon="💰" />
-              <StatCard label="Trésorerie"    value={`${stats.installation_total.toLocaleString('fr-FR')}€`} sub="Total installations signées" icon="🏦" />
-              <StatCard label="Clients actifs" value={stats.clients_actifs}                                   sub={`+ ${stats.clients_en_cours} en cours`} icon="🚀" />
+            <div className="grid-auto-stats" style={{ marginBottom: 22 }}>
+              <StatCard
+                label="MRR Total"
+                value={<CountUp value={stats.mrr_total} format={v => `${Math.round(v).toLocaleString('fr-FR')}€`} />}
+                sub="Revenus récurrents/mois"
+                icon="💰"
+                dataAttr="mrr"
+              />
+              <StatCard label="Trésorerie"    value={<CountUp value={stats.installation_total} format={v => `${Math.round(v).toLocaleString('fr-FR')}€`} />} sub="Total installations signées" icon="🏦" />
+              <StatCard label="Clients actifs" value={<CountUp value={stats.clients_actifs} />}                                                                   sub={`+ ${stats.clients_en_cours} en cours`} icon="🚀" />
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 16, marginBottom: 22 }}>
+            <div style={{ marginBottom: 22 }}>
               <MRRChart clients={clients} />
             </div>
 
-            <div className="grid-2" style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 16, marginBottom: 22 }}>
-              <ClientGrowthChart clients={clients} />
+            <div className="grid-auto-lg" style={{ marginBottom: 22 }}>
+              <MRRForecastChart clients={clients} />
+              <LTVCard clients={clients} />
+            </div>
+
+            <div className="grid-auto-md" style={{ marginBottom: 22 }}>
+              <CohortHeatmap clients={clients} />
               <StatusBreakdown clients={clients} />
             </div>
 
-            <div className="grid-2" style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr', gap: 16, marginBottom: 22 }}>
-              <div>
-                <h2 style={{ fontSize: 16, fontWeight: 700, marginBottom: 16 }}>Clients récents</h2>
-                <div className="grid-2 stagger" style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 16 }}>
-                  {clients.slice(0, 4).map(c => (
-                    <ClientCard key={c.id} client={c} onClick={setSelectedClient} onEdit={setEditingClient} />
-                  ))}
-                </div>
-              </div>
+            <div style={{ marginBottom: 22 }}>
+              <ClientGrowthChart clients={clients} />
+            </div>
+
+            <div className="grid-auto-md" style={{ marginBottom: 22 }}>
+              <UrgentTasksPanel
+                tasks={tasks} clients={clients}
+                onUpdate={updateTaskFn} onDelete={deleteTaskFn}
+                onSelectClient={setSelectedClient}
+              />
               <AtRiskPanel clients={clients} stripePayments={stripePayments} events={events}
                 onSelect={setSelectedClient} />
+            </div>
+
+            <div style={{ marginBottom: 22 }}>
+              <VisitorPanel clients={clients} onSelectClient={setSelectedClient} />
+            </div>
+
+            <div style={{ marginBottom: 22 }}>
+              <h2 style={{ fontSize: 16, fontWeight: 700, marginBottom: 16 }}>Clients récents</h2>
+              <div className="grid-auto-cards stagger">
+                {clients.slice(0, 4).map(c => (
+                  <ClientCard key={c.id} client={c} onClick={setSelectedClient} onEdit={setEditingClient} />
+                ))}
+              </div>
             </div>
           </div>
         )}
@@ -876,23 +1257,99 @@ export default function Home() {
             <div className="grid-2 stagger" style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 16 }}>
               {clients.map(c => <ClientCard key={c.id} client={c} onClick={setSelectedClient} onEdit={setEditingClient} />)}
             </div>
+            {clients.length === 0 && loadingData && (
+              <SkelGrid count={4} columns={2} />
+            )}
             {clients.length === 0 && !loadingData && (
-              <div className="card" style={{ textAlign: 'center', padding: 40, color: 'var(--nerixi-muted)' }}>
-                <p style={{ fontSize: 32, marginBottom: 8 }}>👥</p>
-                <p>Aucun client pour l'instant.</p>
-                <button className="btn-primary" onClick={() => setCreatingClient(true)} style={{ marginTop: 16 }}>+ Créer le premier client</button>
-              </div>
+              <EmptyState variant="clients" action={
+                <button className="btn-primary" onClick={() => setCreatingClient(true)}>+ Créer le premier client</button>
+              } />
             )}
           </div>
         )}
 
-        {/* KANBAN */}
-        {activeTab === 'Kanban' && (
-          <Kanban
+        {/* WORKFLOWS */}
+        {activeTab === 'Workflows' && <WorkflowBuilder />}
+
+        {/* PIPELINE (prospects + clients) */}
+        {activeTab === 'Pipeline' && (
+          <div className="fade-in">
+            <div style={{ marginBottom: 20 }}>
+              <h1 className="h1-page" style={{ fontSize: 28, fontWeight: 800, letterSpacing: -0.5 }}>🎯 Pipeline complet</h1>
+              <p style={{ color: 'var(--nerixi-muted)', marginTop: 6 }}>
+                Top of funnel (prospects) → Bottom of funnel (clients). Drag & drop pour faire avancer chaque deal.
+              </p>
+            </div>
+
+            <Pipeline
+              prospects={prospects}
+              onProspectsChange={(updater) => setProspects(updater)}
+              onConvertToClient={(client) => { handleClientSaved(client) }}
+            />
+
+            {/* Visual flow separator */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 14, margin: '34px 0 22px', position: 'relative' }}>
+              <div style={{ flex: 1, height: 1, background: 'linear-gradient(90deg, transparent, rgba(0,200,120,0.3), rgba(0,200,120,0.3), transparent)' }} />
+              <div style={{
+                display: 'inline-flex', alignItems: 'center', gap: 8,
+                padding: '8px 16px',
+                background: 'linear-gradient(120deg, rgba(0,200,120,0.10), rgba(54,230,196,0.05))',
+                border: '1px solid rgba(0,200,120,0.3)',
+                borderRadius: 999,
+                fontSize: 11.5, fontWeight: 700, letterSpacing: 0.6, textTransform: 'uppercase',
+                color: 'var(--nerixi-accent)',
+              }}>
+                <span>🎯 Prospect signé</span>
+                <span style={{ fontSize: 14 }}>↓</span>
+                <span>👥 Devient client</span>
+              </div>
+              <div style={{ flex: 1, height: 1, background: 'linear-gradient(90deg, transparent, rgba(0,200,120,0.3), rgba(0,200,120,0.3), transparent)' }} />
+            </div>
+
+            <div style={{ marginBottom: 18 }}>
+              <p style={{ fontSize: 11, color: 'var(--nerixi-muted)', textTransform: 'uppercase', letterSpacing: 0.6, fontWeight: 700 }}>📌 Suite — pipeline clients</p>
+              <p style={{ fontSize: 12.5, color: 'var(--nerixi-muted)', marginTop: 4 }}>
+                Une fois signé, le prospect rentre ici. Drag entre Prospect → En cours → Actif → Churné. Chaque transition déclenche le webhook n8n configuré.
+              </p>
+            </div>
+
+            <Kanban
+              clients={clients}
+              onChangeStatus={changeClientStatus}
+              onOpenClient={setSelectedClient}
+              onTimeline={setTimelineClient}
+              onConvertProspect={async (prospectId, statut) => {
+                try {
+                  const res = await fetch(`/api/prospects/${prospectId}/convert`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ statut }),
+                  })
+                  const data = await res.json()
+                  if (data.client) {
+                    handleClientSaved(data.client)
+                    setProspects(prev => prev.filter(p => p.id !== prospectId))
+                  }
+                } catch (e) {}
+              }}
+            />
+          </div>
+        )}
+
+        {/* PROSPECTION */}
+        {activeTab === 'Prospection' && (
+          <Prospection
+            onImport={importProspectAsClient}
+          />
+        )}
+
+        {/* CHAT CLAUDE */}
+        {activeTab === 'Chat' && (
+          <ClaudeChat
             clients={clients}
-            onChangeStatus={changeClientStatus}
-            onOpenClient={setSelectedClient}
-            onTimeline={setTimelineClient}
+            stripePayments={stripePayments}
+            events={events}
+            tasks={tasks}
           />
         )}
 
@@ -923,6 +1380,7 @@ export default function Home() {
             payments={stripePayments}
             mode={stripeMode}
             onRefresh={refreshStripe}
+            onSimulate={() => simulatePayment()}
           />
         )}
 
@@ -932,16 +1390,22 @@ export default function Home() {
             <h1 className="h1-page" style={{ fontSize: 28, fontWeight: 800, marginBottom: 8, letterSpacing: -0.5 }}>📧 Emails</h1>
             <p style={{ color: 'var(--nerixi-muted)', marginBottom: 22 }}>Envoie des emails à tes clients via Brevo</p>
 
-            <div style={{ display: 'inline-flex', gap: 4, marginBottom: 22, background: 'rgba(10,22,40,0.6)', border: '1px solid var(--nerixi-border)', borderRadius: 12, padding: 4 }}>
-              {['templates', 'composer'].map(t => (
-                <button key={t} onClick={() => setEmailTab(t)}
+            <div style={{ display: 'inline-flex', gap: 4, marginBottom: 22, background: 'rgba(10,22,40,0.6)', border: '1px solid var(--nerixi-border)', borderRadius: 12, padding: 4, flexWrap: 'wrap' }}>
+              {[
+                { id: 'inbox',     label: '📥 Inbox' },
+                { id: 'composer',  label: '✏️ Composer' },
+                { id: 'html',      label: '🎨 Templates HTML' },
+                { id: 'lists',     label: '📋 Listes' },
+                { id: 'templates', label: 'Templates rapides' },
+              ].map(t => (
+                <button key={t.id} onClick={() => setEmailTab(t.id)}
                   style={{
-                    background: emailTab === t ? 'linear-gradient(120deg, var(--nerixi-green), var(--nerixi-accent))' : 'transparent',
-                    border: 'none', borderRadius: 8, padding: '8px 22px',
-                    color: emailTab === t ? '#06101f' : 'var(--nerixi-muted)',
+                    background: emailTab === t.id ? 'linear-gradient(120deg, var(--nerixi-green), var(--nerixi-accent))' : 'transparent',
+                    border: 'none', borderRadius: 8, padding: '8px 18px',
+                    color: emailTab === t.id ? '#06101f' : 'var(--nerixi-muted)',
                     cursor: 'pointer', fontWeight: 600, fontSize: 13, transition: 'all 0.2s ease'
                   }}>
-                  {t === 'templates' ? 'Templates' : 'Composer'}
+                  {t.label}
                 </button>
               ))}
             </div>
@@ -962,26 +1426,73 @@ export default function Home() {
               </div>
             )}
 
-            {emailTab === 'composer' && (
-              <div className="card fade-in-up" style={{ maxWidth: 620 }}>
-                <p style={{ fontWeight: 700, marginBottom: 20, fontSize: 15 }}>Composer un email</p>
-                <div style={{ marginBottom: 14 }}>
-                  <label>Destinataire</label>
-                  <input value={emailTo} onChange={e => setEmailTo(e.target.value)} placeholder="email@client.fr" />
+            {emailTab === 'html' && (
+              <div className="fade-in">
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, flexWrap: 'wrap', gap: 10 }}>
+                  <p style={{ fontSize: 14, color: 'var(--nerixi-muted)' }}>Crée des templates HTML complets avec variables — comme dans Brevo.</p>
+                  <button onClick={() => setEditingTemplate({})} className="btn-primary" style={{ padding: '8px 16px', fontSize: 13 }}>
+                    + Nouveau template HTML
+                  </button>
                 </div>
-                <div style={{ marginBottom: 14 }}>
-                  <label>Objet</label>
-                  <input value={emailSujet} onChange={e => setEmailSujet(e.target.value)} placeholder="Objet de l'email..." />
-                </div>
-                <div style={{ marginBottom: 20 }}>
-                  <label>Message</label>
-                  <textarea value={emailContenu} onChange={e => setEmailContenu(e.target.value)} placeholder="Ton message..." rows={8} style={{ resize: 'vertical' }} />
-                </div>
-                {sent && <p className="fade-in" style={{ color: 'var(--nerixi-accent)', fontSize: 13, marginBottom: 12 }}>✅ Email envoyé !</p>}
-                <button className="btn-primary" onClick={sendDirectEmail} disabled={sending} style={{ width: '100%' }}>
-                  {sending ? <><span className="spinner" /> &nbsp;Envoi…</> : 'Envoyer via Brevo'}
-                </button>
+
+                {emailTemplates.length === 0 ? (
+                  <div className="card" style={{ textAlign: 'center', padding: 40, color: 'var(--nerixi-muted)' }}>
+                    <p style={{ fontSize: 32, marginBottom: 8 }}>🎨</p>
+                    <p>Aucun template HTML.</p>
+                    <button onClick={() => setEditingTemplate({})} className="btn-primary" style={{ marginTop: 16 }}>+ Créer mon premier template</button>
+                  </div>
+                ) : (
+                  <div className="grid-2 stagger" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 14 }}>
+                    {emailTemplates.map(t => (
+                      <div key={t.id} className="card card-hover fade-in-up" onClick={() => setEditingTemplate(t)}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
+                          <div style={{ width: 36, height: 36, borderRadius: 10, background: 'linear-gradient(135deg, rgba(0,200,120,0.25), rgba(54,230,196,0.15))', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16 }}>🎨</div>
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <p style={{ fontWeight: 700, fontSize: 14, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{t.name}</p>
+                            <p style={{ fontSize: 11.5, color: 'var(--nerixi-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{t.subject || '(sans sujet)'}</p>
+                          </div>
+                        </div>
+                        <div style={{ background: '#ffffff', borderRadius: 8, padding: 0, height: 140, overflow: 'hidden', border: '1px solid var(--nerixi-border)', position: 'relative' }}>
+                          <iframe
+                            srcDoc={t.html}
+                            title={t.name}
+                            sandbox=""
+                            style={{ width: 600, height: 700, border: 'none', transform: 'scale(0.4)', transformOrigin: 'top left', pointerEvents: 'none' }}
+                          />
+                        </div>
+                        <p style={{ fontSize: 10.5, color: 'var(--nerixi-muted)', marginTop: 8 }}>
+                          Modifié le {new Date(t.updatedAt || t.createdAt).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' })}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
+            )}
+
+            {emailTab === 'inbox' && (
+              <Inbox
+                clients={clients}
+                onSelectClient={setSelectedClient}
+                onCompose={(prefill) => setEmailClient({ id: 0, nom: prefill.toName || prefill.to, email: prefill.to, entreprise: prefill.toName || '', _prefillSubject: prefill.subject })}
+              />
+            )}
+
+            {emailTab === 'composer' && (
+              <Composer
+                clients={clients}
+                lists={lists}
+                emailTemplates={emailTemplates}
+              />
+            )}
+
+            {emailTab === 'lists' && (
+              <ListsManager
+                clients={clients}
+                lists={lists}
+                onSaved={handleListSaved}
+                onDeleted={handleListDeleted}
+              />
             )}
           </div>
         )}
@@ -990,33 +1501,74 @@ export default function Home() {
         {activeTab === 'LinkedIn' && (
           <div className="fade-in">
             <h1 className="h1-page" style={{ fontSize: 28, fontWeight: 800, marginBottom: 8, letterSpacing: -0.5 }}>💼 LinkedIn</h1>
-            <p style={{ color: 'var(--nerixi-muted)', marginBottom: 22 }}>Templates de publications LinkedIn prêts à copier-coller</p>
+            <p style={{ color: 'var(--nerixi-muted)', marginBottom: 22 }}>Génère des publications LinkedIn via n8n (TOFU, BOFU, planning, hooks, carrousel, recyclage)</p>
+
+            <LinkedinGenerator posts={linkedinPosts} onPostsChange={(updater) => setLinkedinPosts(updater)} />
+
+            <div style={{ marginTop: 32, paddingTop: 24, borderTop: '1px solid var(--nerixi-border)' }}>
+              <p style={{ fontSize: 11, color: 'var(--nerixi-muted)', textTransform: 'uppercase', letterSpacing: 0.6, fontWeight: 700, marginBottom: 14 }}>📚 Templates de référence (statiques)</p>
+            </div>
 
             <div className="stagger" style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-              {LINKEDIN_TEMPLATES.map(t => (
-                <div key={t.id} className="card fade-in-up">
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, gap: 8, flexWrap: 'wrap' }}>
-                    <p style={{ fontWeight: 700, fontSize: 15 }}>{t.titre}</p>
-                    <button onClick={() => copyToClipboard(t.contenu, t.id)}
-                      style={{
-                        background: copiedId === t.id ? 'linear-gradient(120deg, var(--nerixi-green), var(--nerixi-accent))' : 'rgba(10,22,40,0.6)',
-                        border: `1px solid ${copiedId === t.id ? 'var(--nerixi-green)' : 'var(--nerixi-border)'}`,
-                        borderRadius: 8, padding: '8px 16px',
-                        color: copiedId === t.id ? '#06101f' : 'var(--nerixi-text)',
-                        cursor: 'pointer', fontSize: 13, fontWeight: 600,
-                        transition: 'all 0.2s ease'
+              {LINKEDIN_TEMPLATES.map(t => {
+                const status = regenStatus[t.id]
+                const regenerating = regeneratingId === t.id
+                const displayContent = regenContent[t.id] || t.contenu
+                const isRegenerated = !!regenContent[t.id]
+                return (
+                  <div key={t.id} className="card fade-in-up">
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, gap: 8, flexWrap: 'wrap' }}>
+                      <div>
+                        <p style={{ fontWeight: 700, fontSize: 15 }}>
+                          {t.titre}
+                          {isRegenerated && <span style={{ marginLeft: 8, fontSize: 10, color: 'var(--nerixi-accent)', background: 'rgba(0,200,120,0.12)', border: '1px solid rgba(0,200,120,0.3)', padding: '2px 8px', borderRadius: 999, fontWeight: 700, letterSpacing: 0.5, textTransform: 'uppercase' }}>✨ régénéré par n8n</span>}
+                        </p>
+                      </div>
+                      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                        {isRegenerated && (
+                          <button onClick={() => resetRegenerated(t.id)}
+                            style={{ background: 'transparent', border: '1px solid var(--nerixi-border)', borderRadius: 8, padding: '8px 12px', color: 'var(--nerixi-muted)', cursor: 'pointer', fontSize: 12, fontWeight: 600 }}>
+                            ↩ Original
+                          </button>
+                        )}
+                        <button onClick={() => copyToClipboard(displayContent, t.id)}
+                          style={{
+                            background: copiedId === t.id ? 'linear-gradient(120deg, var(--nerixi-green), var(--nerixi-accent))' : 'rgba(10,22,40,0.6)',
+                            border: `1px solid ${copiedId === t.id ? 'var(--nerixi-green)' : 'var(--nerixi-border)'}`,
+                            borderRadius: 8, padding: '8px 14px',
+                            color: copiedId === t.id ? '#06101f' : 'var(--nerixi-text)',
+                            cursor: 'pointer', fontSize: 12.5, fontWeight: 600,
+                            transition: 'all 0.2s ease'
+                          }}>
+                          {copiedId === t.id ? '✓ Copié' : '📋 Copier'}
+                        </button>
+                        <button onClick={() => regenerateLinkedIn(t)} disabled={regenerating}
+                          className="btn-primary" style={{ padding: '8px 14px', fontSize: 12.5 }}>
+                          {regenerating ? <><span className="spinner" /> &nbsp;Génération…</> : '✨ Régénérer par n8n'}
+                        </button>
+                      </div>
+                    </div>
+                    {status && (
+                      <div className="fade-in" style={{
+                        marginBottom: 12, padding: '10px 12px',
+                        background: status.ok ? 'rgba(0,200,120,0.10)' : 'rgba(226,75,74,0.10)',
+                        border: `1px solid ${status.ok ? 'rgba(0,200,120,0.3)' : 'rgba(226,75,74,0.3)'}`,
+                        color: status.ok ? '#00e89a' : '#ff8a89',
+                        borderRadius: 8, fontSize: 12.5, fontWeight: 600,
                       }}>
-                      {copiedId === t.id ? '✓ Copié !' : 'Copier'}
-                    </button>
+                        {status.ok ? '✅ Nouveau contenu généré par n8n' : `⚠ ${status.msg}`}
+                      </div>
+                    )}
+                    <div style={{ background: 'rgba(10,22,40,0.6)', border: `1px solid ${isRegenerated ? 'rgba(0,200,120,0.4)' : 'var(--nerixi-border)'}`, borderRadius: 10, padding: 16, fontSize: 13, lineHeight: 1.8, whiteSpace: 'pre-line', color: 'var(--nerixi-text)', transition: 'border-color 0.3s ease' }}>
+                      {displayContent}
+                    </div>
                   </div>
-                  <div style={{ background: 'rgba(10,22,40,0.6)', border: '1px solid var(--nerixi-border)', borderRadius: 10, padding: 16, fontSize: 13, lineHeight: 1.8, whiteSpace: 'pre-line', color: 'var(--nerixi-text)' }}>
-                    {t.contenu}
-                  </div>
-                </div>
-              ))}
+                )
+              })}
             </div>
           </div>
         )}
+        </div>
       </main>
 
       {selectedClient && (
@@ -1029,6 +1581,20 @@ export default function Home() {
           onTimeline={(c) => { setSelectedClient(null); setTimelineClient(c) }}
           stripePayments={stripePayments}
           events={events}
+          tasks={tasks}
+          onCreateTask={createTask}
+          onUpdateTask={updateTaskFn}
+          onDeleteTask={deleteTaskFn}
+          onClientPatch={async (id, patch) => {
+            const cur = clients.find(c => c.id === id)
+            if (!cur) return
+            const res = await fetch(`/api/clients/${id}`, {
+              method: 'PUT', headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ ...cur, ...patch }),
+            })
+            const data = await res.json()
+            if (data.client) handleClientSaved(data.client)
+          }}
         />
       )}
       {timelineClient && (
@@ -1048,8 +1614,26 @@ export default function Home() {
           refreshStripe, refreshAll: refreshData, logout,
         }}
       />
+
+      <RealtimeToastStack toasts={toasts} onDismiss={dismissToast} />
+
+      <YearRecap
+        open={recapOpen}
+        onClose={() => setRecapOpen(false)}
+        clients={clients}
+        events={events}
+        stripePayments={stripePayments}
+      />
       {emailClient && (
-        <EmailModal client={emailClient} onClose={() => setEmailClient(null)} />
+        <EmailModal client={emailClient} onClose={() => setEmailClient(null)} customTemplates={emailTemplates} />
+      )}
+      {editingTemplate && (
+        <EmailTemplateEditor
+          initial={editingTemplate.id ? editingTemplate : null}
+          onClose={() => setEditingTemplate(null)}
+          onSaved={handleTemplateSaved}
+          onDeleted={handleTemplateDeleted}
+        />
       )}
       {editingClient && (
         <ClientForm

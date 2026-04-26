@@ -58,7 +58,7 @@ export default function CommandPalette({ open, onClose, ctx }) {
       { section: 'Actions', icon: '📅', label: 'Nouveau rappel', sub: 'Ajouter à l\'agenda', run: () => { ctx.setActiveTab('Agenda') } },
       { section: 'Actions', icon: '↻',  label: 'Synchroniser Stripe', sub: 'Recharger les paiements', run: () => ctx.refreshStripe?.() },
       { section: 'Actions', icon: '✏️', label: 'Composer un email', sub: 'Email libre via Brevo', run: () => { ctx.setActiveTab('Emails'); ctx.setEmailTab?.('composer') } },
-    )
+    );
 
     // Per-client commands
     (ctx.clients || []).forEach(c => {

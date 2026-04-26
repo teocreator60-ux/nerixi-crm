@@ -207,6 +207,433 @@ export function getPayments() {
   return readStore().payments || []
 }
 
+export function getTasks(clientId) {
+  const tasks = readStore().tasks || []
+  if (clientId != null) return tasks.filter(t => t.clientId === Number(clientId))
+  return tasks
+}
+
+export function createTask(payload) {
+  const store = readStore()
+  store.tasks = store.tasks || []
+  const task = {
+    id: `task_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+    clientId: payload.clientId != null ? Number(payload.clientId) : null,
+    title: payload.title || '',
+    priority: ['high', 'med', 'low'].includes(payload.priority) ? payload.priority : 'med',
+    done: !!payload.done,
+    dueDate: payload.dueDate || null,
+    notes: payload.notes || '',
+    createdAt: new Date().toISOString(),
+  }
+  store.tasks.push(task)
+  writeStore(store)
+  return task
+}
+
+export function updateTask(id, patch) {
+  const store = readStore()
+  store.tasks = store.tasks || []
+  const idx = store.tasks.findIndex(t => t.id === id)
+  if (idx === -1) return null
+  store.tasks[idx] = { ...store.tasks[idx], ...patch, id }
+  writeStore(store)
+  return store.tasks[idx]
+}
+
+export function deleteTask(id) {
+  const store = readStore()
+  store.tasks = (store.tasks || []).filter(t => t.id !== id)
+  writeStore(store)
+  return true
+}
+
+export const PROSPECT_STAGES = [
+  { id: 'froid',          label: 'Froid',          color: '#7a9bb0', icon: '🧊' },
+  { id: 'contacte',       label: 'Contacté',       color: '#6cb6f5', icon: '✉️' },
+  { id: 'rdv_programme',  label: 'RDV programmé',  color: '#36e6c4', icon: '📅' },
+  { id: 'rdv_fait',       label: 'RDV fait',       color: '#fac775', icon: '🤝' },
+  { id: 'proposition',    label: 'Proposition',    color: '#ffaf6b', icon: '📄' },
+  { id: 'en_attente',     label: 'En attente',     color: '#b89cff', icon: '⏳' },
+  { id: 'signe',          label: 'Signé',          color: '#00e89a', icon: '✅' },
+  { id: 'refuse',         label: 'Refusé',         color: '#ff8a89', icon: '❌' },
+]
+
+export function getProspects() {
+  return readStore().prospects || []
+}
+export function getProspect(id) {
+  return getProspects().find(p => p.id === id)
+}
+export function saveProspect(input) {
+  const store = readStore()
+  store.prospects = store.prospects || []
+  const isNew = !input.id
+  const id = input.id || `prosp_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`
+  const now = new Date().toISOString()
+  const prev = isNew ? null : store.prospects.find(p => p.id === id)
+  const prospect = {
+    id,
+    nom:           input.nom || '',
+    entreprise:    input.entreprise || '',
+    email:         input.email || '',
+    telephone:     input.telephone || '',
+    linkedin:      input.linkedin || '',
+    secteur:       input.secteur || '',
+    role:          input.role || '',
+    source:        input.source || 'cold',
+    stage:         input.stage || 'froid',
+    estimatedMRR:  Number(input.estimatedMRR) || 0,
+    lastContact:   input.lastContact || (prev ? prev.lastContact : null),
+    nextAction:    input.nextAction || '',
+    notes:         input.notes || '',
+    createdAt:     input.createdAt || (prev ? prev.createdAt : now),
+    updatedAt:     now,
+  }
+  if (isNew) store.prospects.push(prospect)
+  else {
+    const idx = store.prospects.findIndex(p => p.id === id)
+    if (idx === -1) store.prospects.push(prospect)
+    else store.prospects[idx] = prospect
+  }
+  store.activities = store.activities || []
+  if (prev && prev.stage !== prospect.stage) {
+    store.activities.push({
+      id: `act_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+      ts: now, clientId: null,
+      type: 'prospect_stage_changed',
+      payload: { prospectId: id, entreprise: prospect.entreprise, from: prev.stage, to: prospect.stage },
+    })
+  }
+  writeStore(store)
+  return { prospect, stageChanged: prev && prev.stage !== prospect.stage, previousStage: prev?.stage }
+}
+export function deleteProspect(id) {
+  const store = readStore()
+  store.prospects = (store.prospects || []).filter(p => p.id !== id)
+  writeStore(store)
+  return true
+}
+
+// ───────── Visitor tracking ─────────
+export function getPageviews(limit = 200) {
+  const all = readStore().pageviews || []
+  return all.slice(0, limit)
+}
+
+export function getRecentSessions(limit = 50) {
+  const all = readStore().pageviews || []
+  const map = new Map()
+  for (const pv of all) {
+    if (!map.has(pv.sid)) {
+      map.set(pv.sid, {
+        sid: pv.sid,
+        firstSeen: pv.ts, lastSeen: pv.ts,
+        pageviews: 0,
+        urls: [],
+        clientId: pv.clientId || null,
+        identifiedEmail: pv.identifiedEmail || null,
+        ip: pv.ip,
+        ua: pv.ua,
+        referrer: pv.referrer,
+      })
+    }
+    const s = map.get(pv.sid)
+    s.pageviews++
+    if (pv.ts < s.firstSeen) s.firstSeen = pv.ts
+    if (pv.ts > s.lastSeen) s.lastSeen = pv.ts
+    s.urls.push({ url: pv.url, title: pv.title, ts: pv.ts })
+    if (pv.clientId && !s.clientId) s.clientId = pv.clientId
+    if (pv.identifiedEmail && !s.identifiedEmail) s.identifiedEmail = pv.identifiedEmail
+  }
+  return [...map.values()]
+    .sort((a, b) => new Date(b.lastSeen) - new Date(a.lastSeen))
+    .slice(0, limit)
+}
+
+export function savePageview(input) {
+  const store = readStore()
+  store.pageviews = store.pageviews || []
+  const id = `pv_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`
+  const pv = {
+    id,
+    sid:   input.sid || 'anon_' + id,
+    ts:    input.ts || new Date().toISOString(),
+    url:   input.url || '',
+    title: input.title || '',
+    referrer: input.referrer || '',
+    ip:    input.ip || null,
+    ua:    input.ua || '',
+    clientId: input.clientId != null ? Number(input.clientId) : null,
+    identifiedEmail: input.identifiedEmail || null,
+  }
+  store.pageviews.unshift(pv)
+  if (store.pageviews.length > 5000) store.pageviews = store.pageviews.slice(0, 5000)
+  writeStore(store)
+  return pv
+}
+
+export function identifySession(sid, { clientId, email }) {
+  const store = readStore()
+  store.pageviews = store.pageviews || []
+  let updated = 0
+  for (const pv of store.pageviews) {
+    if (pv.sid === sid) {
+      if (clientId != null && !pv.clientId) { pv.clientId = Number(clientId); updated++ }
+      if (email && !pv.identifiedEmail) { pv.identifiedEmail = email; updated++ }
+    }
+  }
+  writeStore(store)
+  return updated
+}
+
+export function getInboundEmails(clientId) {
+  const all = readStore().inboundEmails || []
+  if (clientId != null) return all.filter(m => m.clientId === Number(clientId))
+  return all
+}
+
+export function getOutboundEmails(clientId) {
+  const all = readStore().outboundEmails || []
+  if (clientId != null) return all.filter(m => m.clientId === Number(clientId))
+  return all
+}
+
+export function saveInboundEmail(input) {
+  const store = readStore()
+  store.inboundEmails = store.inboundEmails || []
+  const id = `in_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`
+  const email = {
+    id,
+    clientId:  input.clientId != null ? Number(input.clientId) : null,
+    fromEmail: input.fromEmail || '',
+    fromName:  input.fromName || '',
+    toEmail:   input.toEmail || '',
+    subject:   input.subject || '(sans objet)',
+    text:      input.text || '',
+    html:      input.html || '',
+    receivedAt: input.receivedAt || new Date().toISOString(),
+    read:      !!input.read,
+  }
+  store.inboundEmails.unshift(email)
+  if (store.inboundEmails.length > 1000) store.inboundEmails = store.inboundEmails.slice(0, 1000)
+  writeStore(store)
+  return email
+}
+
+export function saveOutboundEmail(input) {
+  const store = readStore()
+  store.outboundEmails = store.outboundEmails || []
+  const id = `out_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`
+  const email = {
+    id,
+    clientId: input.clientId != null ? Number(input.clientId) : null,
+    toEmail:  input.toEmail || '',
+    toName:   input.toName || '',
+    subject:  input.subject || '',
+    content:  input.content || '',
+    sentAt:   input.sentAt || new Date().toISOString(),
+  }
+  store.outboundEmails.unshift(email)
+  if (store.outboundEmails.length > 1000) store.outboundEmails = store.outboundEmails.slice(0, 1000)
+  writeStore(store)
+  return email
+}
+
+export function markEmailRead(id, read = true) {
+  const store = readStore()
+  store.inboundEmails = store.inboundEmails || []
+  const idx = store.inboundEmails.findIndex(m => m.id === id)
+  if (idx === -1) return null
+  store.inboundEmails[idx] = { ...store.inboundEmails[idx], read: !!read }
+  writeStore(store)
+  return store.inboundEmails[idx]
+}
+
+export function assignEmailToClient(id, clientId) {
+  const store = readStore()
+  store.inboundEmails = store.inboundEmails || []
+  const idx = store.inboundEmails.findIndex(m => m.id === id)
+  if (idx === -1) return null
+  store.inboundEmails[idx] = { ...store.inboundEmails[idx], clientId: clientId != null ? Number(clientId) : null }
+  writeStore(store)
+  return store.inboundEmails[idx]
+}
+
+export function deleteInboundEmail(id) {
+  const store = readStore()
+  store.inboundEmails = (store.inboundEmails || []).filter(m => m.id !== id)
+  writeStore(store)
+  return true
+}
+
+export function findClientByEmail(email) {
+  if (!email) return null
+  const norm = email.toLowerCase().trim()
+  return getClients().find(c => (c.email || '').toLowerCase().trim() === norm) || null
+}
+
+export function getPaymentLinks(clientId) {
+  const all = readStore().paymentLinks || []
+  if (clientId != null) return all.filter(p => p.clientId === Number(clientId))
+  return all
+}
+
+export function savePaymentLink(input) {
+  const store = readStore()
+  store.paymentLinks = store.paymentLinks || []
+  const isNew = !input.id
+  const id = input.id || `plink_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`
+  const link = {
+    id,
+    clientId:    input.clientId != null ? Number(input.clientId) : null,
+    stripeId:    input.stripeId || null,
+    url:         input.url || '',
+    amount:      Number(input.amount) || 0,
+    currency:    input.currency || 'eur',
+    description: input.description || '',
+    status:      input.status || 'created',
+    paidAt:      input.paidAt || null,
+    expiresAt:   input.expiresAt || null,
+    createdAt:   input.createdAt || new Date().toISOString(),
+    invoiceNumber: input.invoiceNumber || null,
+  }
+  if (isNew) store.paymentLinks.unshift(link)
+  else {
+    const idx = store.paymentLinks.findIndex(p => p.id === id)
+    if (idx === -1) store.paymentLinks.unshift(link)
+    else store.paymentLinks[idx] = link
+  }
+  writeStore(store)
+  return link
+}
+
+export function findPaymentLinkByStripeId(stripeId) {
+  return (readStore().paymentLinks || []).find(p => p.stripeId === stripeId)
+}
+
+export function getLinkedinPosts() {
+  return readStore().linkedinPosts || []
+}
+
+export function saveLinkedinPost(input) {
+  const store = readStore()
+  store.linkedinPosts = store.linkedinPosts || []
+  const isNew = !input.id
+  const id = input.id || `lipost_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`
+  const post = {
+    id,
+    type: input.type || 'tofu',
+    sujet: input.sujet || '',
+    contenu: input.contenu || '',
+    createdAt: input.createdAt || new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  }
+  if (isNew) store.linkedinPosts.unshift(post)
+  else {
+    const idx = store.linkedinPosts.findIndex(p => p.id === id)
+    if (idx === -1) store.linkedinPosts.unshift(post)
+    else store.linkedinPosts[idx] = post
+  }
+  if (store.linkedinPosts.length > 100) store.linkedinPosts = store.linkedinPosts.slice(0, 100)
+  writeStore(store)
+  return post
+}
+
+export function deleteLinkedinPost(id) {
+  const store = readStore()
+  store.linkedinPosts = (store.linkedinPosts || []).filter(p => p.id !== id)
+  writeStore(store)
+  return true
+}
+
+export function getLists() {
+  return readStore().lists || []
+}
+
+export function getList(id) {
+  return getLists().find(l => l.id === id)
+}
+
+export function saveList(input) {
+  const store = readStore()
+  store.lists = store.lists || []
+  const isNew = !input.id
+  const id = input.id || `list_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`
+  const list = {
+    id,
+    name: input.name || 'Nouvelle liste',
+    clientIds: Array.isArray(input.clientIds) ? input.clientIds.map(Number).filter(n => !isNaN(n)) : [],
+    createdAt: input.createdAt || new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  }
+  if (isNew) store.lists.push(list)
+  else {
+    const idx = store.lists.findIndex(l => l.id === id)
+    if (idx === -1) store.lists.push(list)
+    else store.lists[idx] = list
+  }
+  writeStore(store)
+  return list
+}
+
+export function deleteList(id) {
+  const store = readStore()
+  store.lists = (store.lists || []).filter(l => l.id !== id)
+  writeStore(store)
+  return true
+}
+
+export function getEmailTemplates() {
+  return readStore().emailTemplates || []
+}
+
+export function getEmailTemplate(id) {
+  return getEmailTemplates().find(t => t.id === id)
+}
+
+export function saveEmailTemplate(input) {
+  const store = readStore()
+  store.emailTemplates = store.emailTemplates || []
+  const isNew = !input.id
+  const id = input.id || `tpl_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`
+  const tpl = {
+    id,
+    name: input.name || 'Sans titre',
+    subject: input.subject || '',
+    html: input.html || '',
+    createdAt: input.createdAt || new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  }
+  if (isNew) store.emailTemplates.push(tpl)
+  else {
+    const idx = store.emailTemplates.findIndex(t => t.id === id)
+    if (idx === -1) store.emailTemplates.push(tpl)
+    else store.emailTemplates[idx] = tpl
+  }
+  writeStore(store)
+  return tpl
+}
+
+export function deleteEmailTemplate(id) {
+  const store = readStore()
+  store.emailTemplates = (store.emailTemplates || []).filter(t => t.id !== id)
+  writeStore(store)
+  return true
+}
+
+export function getConfig() {
+  const store = readStore()
+  return store.config || {}
+}
+
+export function setConfig(patch) {
+  const store = readStore()
+  store.config = { ...(store.config || {}), ...patch }
+  writeStore(store)
+  return store.config
+}
+
 export function logActivity(entry) {
   const store = readStore()
   store.activities = store.activities || []

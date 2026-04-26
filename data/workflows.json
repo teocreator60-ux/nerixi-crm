@@ -1,0 +1,101 @@
+{
+  "workflows": [
+    {
+      "id": "wf_seed_welcome",
+      "name": "Bienvenue nouveau client",
+      "enabled": false,
+      "createdAt": "2026-04-25T15:42:07.744Z",
+      "trigger": {
+        "type": "client.created",
+        "config": {}
+      },
+      "actions": [
+        {
+          "id": "a1",
+          "type": "send_email",
+          "config": {
+            "template": "welcome",
+            "subject": "Bienvenue chez Nerixi !",
+            "content": "Bonjour {prenom},\n\nMerci de nous faire confiance."
+          }
+        },
+        {
+          "id": "a2",
+          "type": "create_event",
+          "config": {
+            "title": "Premier point de cadrage",
+            "daysFromNow": 3,
+            "time": "10:00",
+            "type": "meeting"
+          }
+        },
+        {
+          "id": "a3",
+          "type": "trigger_n8n",
+          "config": {
+            "url": ""
+          }
+        }
+      ]
+    },
+    {
+      "id": "wf_seed_paid",
+      "name": "Paiement reçu — confirmation",
+      "enabled": false,
+      "createdAt": "2026-04-25T15:42:07.744Z",
+      "trigger": {
+        "type": "payment.received",
+        "config": {}
+      },
+      "actions": [
+        {
+          "id": "a1",
+          "type": "send_email",
+          "config": {
+            "template": "thanks",
+            "subject": "Merci pour votre paiement",
+            "content": "Bonjour {prenom},\n\nNous confirmons la bonne réception de votre paiement."
+          }
+        },
+        {
+          "id": "a2",
+          "type": "log_note",
+          "config": {
+            "note": "Paiement reçu — confirmation envoyée"
+          }
+        }
+      ]
+    },
+    {
+      "id": "wf_seed_actif",
+      "name": "Passage en Actif",
+      "enabled": false,
+      "createdAt": "2026-04-25T15:42:07.745Z",
+      "trigger": {
+        "type": "client.status_changed",
+        "config": {
+          "to": "actif"
+        }
+      },
+      "actions": [
+        {
+          "id": "a1",
+          "type": "create_event",
+          "config": {
+            "title": "Démarrage projet · {entreprise}",
+            "daysFromNow": 2,
+            "time": "09:30",
+            "type": "meeting"
+          }
+        },
+        {
+          "id": "a2",
+          "type": "trigger_n8n",
+          "config": {
+            "url": ""
+          }
+        }
+      ]
+    }
+  ]
+}
