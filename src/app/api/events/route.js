@@ -9,7 +9,7 @@ function requireAuth() {
 
 export async function GET() {
   if (!requireAuth()) return Response.json({ error: 'Unauthorized' }, { status: 401 })
-  return Response.json({ events: getEvents() })
+  return Response.json({ events: await getEvents() })
 }
 
 export async function POST(request) {
@@ -19,7 +19,7 @@ export async function POST(request) {
     if (!payload.date || !payload.title) {
       return Response.json({ error: 'date et title requis' }, { status: 400 })
     }
-    const event = createEvent(payload)
+    const event = await createEvent(payload)
     return Response.json({ event })
   } catch (e) {
     return Response.json({ error: e.message }, { status: 400 })

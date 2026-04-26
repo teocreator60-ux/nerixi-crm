@@ -52,8 +52,8 @@ export async function POST(request) {
     const html      = item.RawHtmlBody || item.HtmlBody || item.html || ''
     const receivedAt = item.SentAtDate || item.receivedAt || new Date().toISOString()
 
-    const client = findClientByEmail(fromEmail)
-    const email = saveInboundEmail({
+    const client = await findClientByEmail(fromEmail)
+    const email = await saveInboundEmail({
       clientId: client?.id || null,
       fromEmail, fromName,
       toEmail,
@@ -64,7 +64,7 @@ export async function POST(request) {
     saved.push(email)
 
     if (client) {
-      logActivity({
+      await logActivity({
         clientId: client.id,
         type: 'email_received',
         payload: { subject, from: fromEmail, emailId: email.id },

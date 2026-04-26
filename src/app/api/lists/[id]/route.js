@@ -9,7 +9,7 @@ function requireAuth() {
 
 export async function GET(_req, { params }) {
   if (!requireAuth()) return Response.json({ error: 'Unauthorized' }, { status: 401 })
-  const list = getList(params.id)
+  const list = await getList(params.id)
   if (!list) return Response.json({ error: 'Not found' }, { status: 404 })
   return Response.json({ list })
 }
@@ -18,7 +18,7 @@ export async function PUT(request, { params }) {
   if (!requireAuth()) return Response.json({ error: 'Unauthorized' }, { status: 401 })
   try {
     const patch = await request.json()
-    const list = saveList({ ...patch, id: params.id })
+    const list = await saveList({ ...patch, id: params.id })
     return Response.json({ list })
   } catch (e) {
     return Response.json({ error: e.message }, { status: 400 })
@@ -27,6 +27,6 @@ export async function PUT(request, { params }) {
 
 export async function DELETE(_req, { params }) {
   if (!requireAuth()) return Response.json({ error: 'Unauthorized' }, { status: 401 })
-  deleteList(params.id)
+  await deleteList(params.id)
   return Response.json({ success: true })
 }

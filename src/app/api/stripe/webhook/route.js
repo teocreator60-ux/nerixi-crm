@@ -21,10 +21,11 @@ function verifyStripeSig(rawBody, header, secret) {
   } catch { return false }
 }
 
-function findClientByEmail(email) {
+async function findClientByEmail(email) {
   if (!email) return null
   const norm = email.toLowerCase().trim()
-  return getClients().find(c => (c.email || '').toLowerCase().trim() === norm) || null
+  const clients = await getClients()
+  return clients.find(c => (c.email || '').toLowerCase().trim() === norm) || null
 }
 
 export async function POST(request) {
@@ -44,7 +45,7 @@ export async function POST(request) {
   const obj = event?.data?.object || {}
   const amount = obj.amount_received ?? obj.amount ?? 0
   const email = obj.billing_details?.email || obj.receipt_email || obj.customer_email || null
-  const client = findClientByEmail(email)
+  const client = await findClientByEmail(email)
 
   let normalizedType = null
   if (event.type === 'charge.succeeded' || event.type === 'payment_intent.succeeded') normalizedType = 'payment.received'
@@ -70,7 +71,7 @@ export async function POST(request) {
     })
 
     if (client) {
-      logActivity({
+      await logActivity({
         clientId: client.id,
         type: normalizedType === 'payment.received' ? 'stripe_succeeded' : (normalizedType === 'payment.failed' ? 'stripe_failed' : 'stripe_refunded'),
         payload: { amount, currency: obj.currency || 'eur', stripeId: obj.id },
@@ -80,9 +81,9 @@ export async function POST(request) {
     // Mark matching payment_link as paid (via metadata)
     const linkStripeId = obj.metadata?.payment_link || obj.payment_link
     if (linkStripeId && normalizedType === 'payment.received') {
-      const existing = findPaymentLinkByStripeId(linkStripeId)
+      const existing = await findPaymentLinkByStripeId(linkStripeId)
       if (existing) {
-        savePaymentLink({ ...existing, status: 'paid', paidAt: new Date().toISOString() })
+        await savePaymentLink({ ...existing, status: 'paid', paidAt: new Date().toISOString() })
       }
     }
 

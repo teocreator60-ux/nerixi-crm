@@ -48,11 +48,11 @@ export async function POST(request) {
   } catch {}
 
   if (identifiedEmail && !clientId) {
-    const c = findClientByEmail(identifiedEmail)
+    const c = await findClientByEmail(identifiedEmail)
     if (c) clientId = c.id
   }
 
-  const pv = savePageview({ sid, url, title, referrer, ip, ua, clientId, identifiedEmail })
+  const pv = await savePageview({ sid, url, title, referrer, ip, ua, clientId, identifiedEmail })
 
   // Live event for the dashboard
   emitEvent({

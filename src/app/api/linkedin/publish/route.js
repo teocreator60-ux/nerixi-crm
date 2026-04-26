@@ -55,7 +55,7 @@ export async function POST(request) {
     errorMsg = e.name === 'TimeoutError' ? 'Timeout n8n (>10s)' : (e.message || 'Erreur réseau')
   }
 
-  logActivity({
+  await logActivity({
     type: 'linkedin_published',
     payload: { title: payload.title, status: errorMsg ? 'failed' : 'sent', error: errorMsg },
   })

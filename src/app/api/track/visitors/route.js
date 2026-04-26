@@ -9,5 +9,5 @@ function requireAuth() {
 
 export async function GET() {
   if (!requireAuth()) return Response.json({ error: 'Unauthorized' }, { status: 401 })
-  return Response.json({ sessions: getRecentSessions(50) })
+  return Response.json({ sessions: await getRecentSessions(50) })
 }

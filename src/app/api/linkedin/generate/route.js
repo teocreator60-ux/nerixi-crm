@@ -78,15 +78,15 @@ export async function POST(request) {
   }
 
   if (errorMsg) {
-    logActivity({ type: 'linkedin_generate_failed', payload: { type, sujet, error: errorMsg } })
+    await logActivity({ type: 'linkedin_generate_failed', payload: { type, sujet, error: errorMsg } })
     return Response.json({ error: errorMsg }, { status: 502 })
   }
   if (!generated) {
     return Response.json({ error: 'n8n n\'a pas retourné de contenu (champ "content" attendu)' }, { status: 502 })
   }
 
-  const post = saveLinkedinPost({ type, sujet, contenu: generated })
-  logActivity({ type: 'linkedin_generated', payload: { postId: post.id, postType: type, sujet, length: generated.length } })
+  const post = await saveLinkedinPost({ type, sujet, contenu: generated })
+  await logActivity({ type: 'linkedin_generated', payload: { postId: post.id, postType: type, sujet, length: generated.length } })
 
   return Response.json({ success: true, post })
 }

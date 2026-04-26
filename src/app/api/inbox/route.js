@@ -12,13 +12,9 @@ export async function GET(request) {
   const { searchParams } = new URL(request.url)
   const clientId = searchParams.get('clientId')
   if (clientId) {
-    return Response.json({
-      inbound: getInboundEmails(clientId),
-      outbound: getOutboundEmails(clientId),
-    })
+    const [inbound, outbound] = await Promise.all([getInboundEmails(clientId), getOutboundEmails(clientId)])
+    return Response.json({ inbound, outbound })
   }
-  return Response.json({
-    inbound: getInboundEmails(),
-    outbound: getOutboundEmails(),
-  })
+  const [inbound, outbound] = await Promise.all([getInboundEmails(), getOutboundEmails()])
+  return Response.json({ inbound, outbound })
 }

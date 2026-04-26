@@ -8,7 +8,7 @@ export async function POST(request) {
 
     // Find matching client + log outbound email (best effort)
     const { findClientByEmail, saveOutboundEmail, logActivity } = await import('@/lib/store')
-    const matchClient = findClientByEmail(to)
+    const matchClient = await findClientByEmail(to)
 
     const emailBody = {
       sender: {
@@ -71,13 +71,13 @@ export async function POST(request) {
     }
 
     try {
-      saveOutboundEmail({
+      await saveOutboundEmail({
         clientId: matchClient?.id || null,
         toEmail: to, toName: toName || '',
         subject, content,
       })
       if (matchClient) {
-        logActivity({
+        await logActivity({
           clientId: matchClient.id,
           type: 'email_sent',
           payload: { subject, to },

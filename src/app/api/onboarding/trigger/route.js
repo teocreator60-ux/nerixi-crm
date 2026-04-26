@@ -29,7 +29,7 @@ export async function POST(request) {
   const clientId = payload.clientId
   if (!clientId) return Response.json({ error: 'clientId requis' }, { status: 400 })
 
-  const client = getClient(clientId)
+  const client = await getClient(clientId)
   if (!client) return Response.json({ error: 'Client introuvable' }, { status: 404 })
 
   const event = {
@@ -85,12 +85,12 @@ export async function POST(request) {
     response: !errorMsg && n8nResponse ? n8nResponse : null,
   }
 
-  const result = updateClient(clientId, { ...client, onboarding })
+  const result = await updateClient(clientId, { ...client, onboarding })
   const updated = result?.client || null
 
   // Log onboarding activity
   const { logActivity } = await import('@/lib/store')
-  logActivity({
+  await logActivity({
     clientId,
     type: 'onboarding_triggered',
     payload: { status: errorMsg ? 'failed' : 'sent', error: errorMsg, triggeredBy: payload.triggeredBy || 'manual' },

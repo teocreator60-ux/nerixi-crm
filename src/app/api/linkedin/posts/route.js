@@ -9,14 +9,14 @@ function requireAuth() {
 
 export async function GET() {
   if (!requireAuth()) return Response.json({ error: 'Unauthorized' }, { status: 401 })
-  return Response.json({ posts: getLinkedinPosts() })
+  return Response.json({ posts: await getLinkedinPosts() })
 }
 
 export async function POST(request) {
   if (!requireAuth()) return Response.json({ error: 'Unauthorized' }, { status: 401 })
   try {
     const payload = await request.json()
-    const post = saveLinkedinPost(payload)
+    const post = await saveLinkedinPost(payload)
     return Response.json({ post })
   } catch (e) {
     return Response.json({ error: e.message }, { status: 400 })

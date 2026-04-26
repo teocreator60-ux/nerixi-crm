@@ -9,7 +9,7 @@ function requireAuth() {
 
 export async function GET() {
   if (!requireAuth()) return Response.json({ error: 'Unauthorized' }, { status: 401 })
-  return Response.json({ lists: getLists() })
+  return Response.json({ lists: await getLists() })
 }
 
 export async function POST(request) {
@@ -17,7 +17,7 @@ export async function POST(request) {
   try {
     const payload = await request.json()
     if (!payload.name) return Response.json({ error: 'name requis' }, { status: 400 })
-    const list = saveList(payload)
+    const list = await saveList(payload)
     return Response.json({ list })
   } catch (e) {
     return Response.json({ error: e.message }, { status: 400 })

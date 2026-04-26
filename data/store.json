@@ -2081,6 +2081,18 @@
         "from": "en-cours",
         "to": "prospect"
       }
+    },
+    {
+      "id": "act_1777210710536_zaxd6",
+      "ts": "2026-04-26T13:38:30.536Z",
+      "clientId": null,
+      "type": "linkedin_generated",
+      "payload": {
+        "postId": "lipost_1777210710531_dsdv",
+        "postType": "hook",
+        "sujet": "automatisations complète pme",
+        "length": 235
+      }
     }
   ],
   "nextClientId": 12,
@@ -2095,6 +2107,14 @@
     }
   ],
   "linkedinPosts": [
+    {
+      "id": "lipost_1777210710531_dsdv",
+      "type": "hook",
+      "sujet": "automatisations complète pme",
+      "contenu": "Votre PME manque de temps pour l'essentiel ?\nLes tâches répétitives freinent votre croissance ?\nC'est le défi de beaucoup de dirigeants français.\n\nL'automatisation IA change la donne.\nElle prend en charge ce qui vous ralentit.\nImaginez",
+      "createdAt": "2026-04-26T13:38:30.531Z",
+      "updatedAt": "2026-04-26T13:38:30.531Z"
+    },
     {
       "id": "lipost_1777142907327_4ox9",
       "type": "hook",

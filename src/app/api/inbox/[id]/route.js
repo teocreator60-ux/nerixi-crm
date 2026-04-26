@@ -12,8 +12,8 @@ export async function PUT(request, { params }) {
   try {
     const patch = await request.json()
     let updated
-    if (patch.read !== undefined) updated = markEmailRead(params.id, patch.read)
-    if (patch.clientId !== undefined) updated = assignEmailToClient(params.id, patch.clientId)
+    if (patch.read !== undefined) updated = await markEmailRead(params.id, patch.read)
+    if (patch.clientId !== undefined) updated = await assignEmailToClient(params.id, patch.clientId)
     if (!updated) return Response.json({ error: 'Not found' }, { status: 404 })
     return Response.json({ email: updated })
   } catch (e) {
@@ -23,6 +23,6 @@ export async function PUT(request, { params }) {
 
 export async function DELETE(_req, { params }) {
   if (!requireAuth()) return Response.json({ error: 'Unauthorized' }, { status: 401 })
-  deleteInboundEmail(params.id)
+  await deleteInboundEmail(params.id)
   return Response.json({ success: true })
 }

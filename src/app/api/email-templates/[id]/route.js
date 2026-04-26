@@ -9,7 +9,7 @@ function requireAuth() {
 
 export async function GET(_req, { params }) {
   if (!requireAuth()) return Response.json({ error: 'Unauthorized' }, { status: 401 })
-  const tpl = getEmailTemplate(params.id)
+  const tpl = await getEmailTemplate(params.id)
   if (!tpl) return Response.json({ error: 'Not found' }, { status: 404 })
   return Response.json({ template: tpl })
 }
@@ -18,7 +18,7 @@ export async function PUT(request, { params }) {
   if (!requireAuth()) return Response.json({ error: 'Unauthorized' }, { status: 401 })
   try {
     const patch = await request.json()
-    const tpl = saveEmailTemplate({ ...patch, id: params.id })
+    const tpl = await saveEmailTemplate({ ...patch, id: params.id })
     return Response.json({ template: tpl })
   } catch (e) {
     return Response.json({ error: e.message }, { status: 400 })
@@ -27,6 +27,6 @@ export async function PUT(request, { params }) {
 
 export async function DELETE(_req, { params }) {
   if (!requireAuth()) return Response.json({ error: 'Unauthorized' }, { status: 401 })
-  deleteEmailTemplate(params.id)
+  await deleteEmailTemplate(params.id)
   return Response.json({ success: true })
 }

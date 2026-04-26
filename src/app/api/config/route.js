@@ -9,14 +9,14 @@ function requireAuth() {
 
 export async function GET() {
   if (!requireAuth()) return Response.json({ error: 'Unauthorized' }, { status: 401 })
-  return Response.json({ config: getConfig() })
+  return Response.json({ config: await getConfig() })
 }
 
 export async function PUT(request) {
   if (!requireAuth()) return Response.json({ error: 'Unauthorized' }, { status: 401 })
   try {
     const patch = await request.json()
-    return Response.json({ config: setConfig(patch) })
+    return Response.json({ config: await setConfig(patch) })
   } catch (e) {
     return Response.json({ error: e.message }, { status: 400 })
   }

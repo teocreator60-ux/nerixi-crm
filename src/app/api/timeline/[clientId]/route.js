@@ -10,17 +10,21 @@ function requireAuth() {
 export async function GET(_req, { params }) {
   if (!requireAuth()) return Response.json({ error: 'Unauthorized' }, { status: 401 })
   const id = Number(params.clientId)
-  const client = getClient(id)
+  const [client, activitiesRaw, eventsAll] = await Promise.all([
+    getClient(id),
+    getActivities(id),
+    getEvents(),
+  ])
   if (!client) return Response.json({ error: 'Not found' }, { status: 404 })
 
-  const activities = getActivities(id).map(a => ({
+  const activities = activitiesRaw.map(a => ({
     id: a.id,
     ts: a.ts,
     type: a.type,
     payload: a.payload,
   }))
 
-  const events = getEvents()
+  const events = eventsAll
     .filter(e => e.clientId === id)
     .map(e => ({
       id: e.id,

@@ -44,7 +44,7 @@ export async function POST(request) {
     return Response.json({ error: 'clientId et amount (>0) requis' }, { status: 400 })
   }
 
-  const client = getClient(clientId)
+  const client = await getClient(clientId)
   if (!client) return Response.json({ error: 'Client introuvable' }, { status: 404 })
 
   const productName = description || `Prestation Nerixi · ${client.entreprise}`
@@ -74,7 +74,7 @@ export async function POST(request) {
       'after_completion[redirect][url]': payload.successUrl || (process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000') + '/?paid=1',
     }, secret)
 
-    const saved = savePaymentLink({
+    const saved = await savePaymentLink({
       clientId,
       stripeId: link.id,
       url: link.url,
@@ -85,7 +85,7 @@ export async function POST(request) {
       invoiceNumber,
     })
 
-    logActivity({
+    await logActivity({
       clientId,
       type: 'payment_link_created',
       payload: { linkId: saved.id, amount, description: productName, invoiceNumber },

@@ -1,12 +1,40 @@
-import fs from 'fs'
-import path from 'path'
+import { kv } from '@vercel/kv'
 import { clients as seedClients } from './clients'
 
-const DATA_DIR = path.join(process.cwd(), 'data')
-const STORE_FILE = path.join(DATA_DIR, 'store.json')
+// ─── Storage backend: Vercel KV (Redis) ───────────────────────────
+// One key per collection. All functions are async.
 
-function ensureDir() {
-  try { fs.mkdirSync(DATA_DIR, { recursive: true }) } catch {}
+const P = 'nerixi:'
+
+// ───────── Seeding (1ère exécution uniquement) ─────────
+let seedPromise = null
+async function ensureSeeded() {
+  if (seedPromise) return seedPromise
+  seedPromise = (async () => {
+    const flag = await kv.get(P + 'seeded_v1')
+    if (flag) return
+    const clients = JSON.parse(JSON.stringify(seedClients))
+    const payments = clients.flatMap(genPaymentHistory)
+    const events = defaultEvents(clients)
+    const activities = clients.map(c => ({
+      id: `act_seed_${c.id}`,
+      ts: new Date(c.dateDebut + 'T09:00:00').toISOString(),
+      clientId: c.id,
+      type: 'client_created',
+      payload: { entreprise: c.entreprise },
+    }))
+    const nextClientId = Math.max(...clients.map(c => c.id)) + 1
+
+    await Promise.all([
+      kv.set(P + 'clients', clients),
+      kv.set(P + 'payments', payments),
+      kv.set(P + 'events', events),
+      kv.set(P + 'activities', activities),
+      kv.set(P + 'nextClientId', nextClientId),
+      kv.set(P + 'seeded_v1', Date.now()),
+    ])
+  })()
+  return seedPromise
 }
 
 function genPaymentHistory(client) {
@@ -40,57 +68,53 @@ function defaultEvents(clients) {
   return ev
 }
 
-function defaultStore() {
-  const clients = JSON.parse(JSON.stringify(seedClients))
-  const payments = clients.flatMap(genPaymentHistory)
-  const events = defaultEvents(clients)
-  const activities = clients.map(c => ({
-    id: `act_seed_${c.id}`,
-    ts: new Date(c.dateDebut + 'T09:00:00').toISOString(),
-    clientId: c.id,
-    type: 'client_created',
-    payload: { entreprise: c.entreprise },
-  }))
-  return { clients, payments, events, activities, nextClientId: Math.max(...clients.map(c => c.id)) + 1 }
-}
+// ───────── KV helpers ─────────
+async function readCol(name) { await ensureSeeded(); return (await kv.get(P + name)) || [] }
+async function writeCol(name, data) { await kv.set(P + name, data) }
+async function readScalar(name) { await ensureSeeded(); return await kv.get(P + name) }
+async function writeScalar(name, val) { await kv.set(P + name, val) }
 
-function readStore() {
-  ensureDir()
-  if (!fs.existsSync(STORE_FILE)) {
-    const data = defaultStore()
-    fs.writeFileSync(STORE_FILE, JSON.stringify(data, null, 2))
-    return data
+// ───────── Big getStore (utility) ─────────
+export async function getStore() {
+  await ensureSeeded()
+  const [clients, prospects, events, tasks, payments, activities, linkedinPosts, emailTemplates, lists, paymentLinks, inboundEmails, outboundEmails, pageviews, nextClientId, config, workflows] = await Promise.all([
+    kv.get(P + 'clients'),
+    kv.get(P + 'prospects'),
+    kv.get(P + 'events'),
+    kv.get(P + 'tasks'),
+    kv.get(P + 'payments'),
+    kv.get(P + 'activities'),
+    kv.get(P + 'linkedinPosts'),
+    kv.get(P + 'emailTemplates'),
+    kv.get(P + 'lists'),
+    kv.get(P + 'paymentLinks'),
+    kv.get(P + 'inboundEmails'),
+    kv.get(P + 'outboundEmails'),
+    kv.get(P + 'pageviews'),
+    kv.get(P + 'nextClientId'),
+    kv.get(P + 'config'),
+    kv.get(P + 'workflows'),
+  ])
+  return {
+    clients: clients || [], prospects: prospects || [], events: events || [],
+    tasks: tasks || [], payments: payments || [], activities: activities || [],
+    linkedinPosts: linkedinPosts || [], emailTemplates: emailTemplates || [],
+    lists: lists || [], paymentLinks: paymentLinks || [],
+    inboundEmails: inboundEmails || [], outboundEmails: outboundEmails || [],
+    pageviews: pageviews || [], nextClientId: nextClientId || 1,
+    config: config || {}, workflows: workflows || [],
   }
-  try {
-    const raw = fs.readFileSync(STORE_FILE, 'utf8')
-    return JSON.parse(raw)
-  } catch {
-    const data = defaultStore()
-    fs.writeFileSync(STORE_FILE, JSON.stringify(data, null, 2))
-    return data
-  }
 }
 
-function writeStore(data) {
-  ensureDir()
-  fs.writeFileSync(STORE_FILE, JSON.stringify(data, null, 2))
+// ───────── Clients ─────────
+export async function getClients() { return await readCol('clients') }
+export async function getClient(id) {
+  const list = await readCol('clients')
+  return list.find(c => c.id === Number(id))
 }
-
-export function getStore() {
-  return readStore()
-}
-
-export function getClients() {
-  return readStore().clients
-}
-
-export function getClient(id) {
-  return readStore().clients.find(c => c.id === Number(id))
-}
-
-export function createClient(payload) {
-  const store = readStore()
-  const id = store.nextClientId || (Math.max(0, ...store.clients.map(c => c.id)) + 1)
+export async function createClient(payload) {
+  const [list, nextId] = await Promise.all([readCol('clients'), readScalar('nextClientId')])
+  const id = nextId || (Math.max(0, ...list.map(c => c.id)) + 1)
   const client = {
     id,
     nom: payload.nom || '',
@@ -109,69 +133,58 @@ export function createClient(payload) {
     linkedin: payload.linkedin || '',
     tags: Array.isArray(payload.tags) ? payload.tags : [],
   }
-  store.clients.push(client)
-  store.nextClientId = id + 1
-  store.activities = store.activities || []
-  store.activities.push({
-    id: `act_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+  list.push(client)
+  await writeCol('clients', list)
+  await writeScalar('nextClientId', id + 1)
+  await pushActivity({
     ts: new Date().toISOString(),
     clientId: id,
     type: 'client_created',
     payload: { entreprise: client.entreprise, statut: client.statut },
   })
-  writeStore(store)
   return client
 }
-
-export function updateClient(id, patch) {
-  const store = readStore()
-  const idx = store.clients.findIndex(c => c.id === Number(id))
+export async function updateClient(id, patch) {
+  const list = await readCol('clients')
+  const idx = list.findIndex(c => c.id === Number(id))
   if (idx === -1) return null
-  const cur = store.clients[idx]
+  const cur = list[idx]
   const next = {
-    ...cur,
-    ...patch,
-    id: cur.id,
+    ...cur, ...patch, id: cur.id,
     mrr: patch.mrr !== undefined ? Number(patch.mrr) : cur.mrr,
     installation: patch.installation !== undefined ? Number(patch.installation) : cur.installation,
     avancement: patch.avancement !== undefined ? Number(patch.avancement) : cur.avancement,
     automatisations: Array.isArray(patch.automatisations) ? patch.automatisations : cur.automatisations,
     tags: Array.isArray(patch.tags) ? patch.tags : cur.tags,
   }
-  store.clients[idx] = next
-  store.activities = store.activities || []
+  list[idx] = next
+  await writeCol('clients', list)
   if (patch.statut && patch.statut !== cur.statut) {
-    store.activities.push({
-      id: `act_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
-      ts: new Date().toISOString(),
-      clientId: cur.id,
+    await pushActivity({
+      ts: new Date().toISOString(), clientId: cur.id,
       type: 'status_changed',
       payload: { from: cur.statut, to: patch.statut },
     })
   }
-  writeStore(store)
   return { client: next, statusChanged: patch.statut && patch.statut !== cur.statut, previousStatus: cur.statut }
 }
-
-export function deleteClient(id) {
-  const store = readStore()
-  const before = store.clients.length
-  store.clients = store.clients.filter(c => c.id !== Number(id))
-  store.events = (store.events || []).filter(e => e.clientId !== Number(id))
-  store.payments = (store.payments || []).filter(p => p.clientId !== Number(id))
-  writeStore(store)
-  return before !== store.clients.length
+export async function deleteClient(id) {
+  const [clients, events, payments] = await Promise.all([readCol('clients'), readCol('events'), readCol('payments')])
+  const before = clients.length
+  await Promise.all([
+    writeCol('clients', clients.filter(c => c.id !== Number(id))),
+    writeCol('events', events.filter(e => e.clientId !== Number(id))),
+    writeCol('payments', payments.filter(p => p.clientId !== Number(id))),
+  ])
+  return before !== clients.length - 0
 }
 
-export function getEvents() {
-  return readStore().events || []
-}
-
-export function createEvent(payload) {
-  const store = readStore()
-  const id = `evt_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`
+// ───────── Events ─────────
+export async function getEvents() { return await readCol('events') }
+export async function createEvent(payload) {
+  const list = await readCol('events')
   const event = {
-    id,
+    id: `evt_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
     clientId: payload.clientId ? Number(payload.clientId) : null,
     date: payload.date,
     time: payload.time || '09:00',
@@ -180,42 +193,43 @@ export function createEvent(payload) {
     done: !!payload.done,
     notes: payload.notes || '',
   }
-  store.events = store.events || []
-  store.events.push(event)
-  writeStore(store)
+  list.push(event)
+  await writeCol('events', list)
   return event
 }
-
-export function updateEvent(id, patch) {
-  const store = readStore()
-  store.events = store.events || []
-  const idx = store.events.findIndex(e => e.id === id)
+export async function updateEvent(id, patch) {
+  const list = await readCol('events')
+  const idx = list.findIndex(e => e.id === id)
   if (idx === -1) return null
-  store.events[idx] = { ...store.events[idx], ...patch, id }
-  writeStore(store)
-  return store.events[idx]
+  list[idx] = { ...list[idx], ...patch, id }
+  await writeCol('events', list)
+  return list[idx]
 }
-
-export function deleteEvent(id) {
-  const store = readStore()
-  store.events = (store.events || []).filter(e => e.id !== id)
-  writeStore(store)
+export async function deleteEvent(id) {
+  const list = await readCol('events')
+  await writeCol('events', list.filter(e => e.id !== id))
   return true
 }
 
-export function getPayments() {
-  return readStore().payments || []
+// ───────── Payments ─────────
+export async function getPayments() { return await readCol('payments') }
+export async function setPaymentStatus(paymentId, status) {
+  const list = await readCol('payments')
+  const idx = list.findIndex(p => p.id === paymentId)
+  if (idx === -1) return null
+  list[idx].status = status
+  await writeCol('payments', list)
+  return list[idx]
 }
 
-export function getTasks(clientId) {
-  const tasks = readStore().tasks || []
-  if (clientId != null) return tasks.filter(t => t.clientId === Number(clientId))
-  return tasks
+// ───────── Tasks ─────────
+export async function getTasks(clientId) {
+  const list = await readCol('tasks')
+  if (clientId != null) return list.filter(t => t.clientId === Number(clientId))
+  return list
 }
-
-export function createTask(payload) {
-  const store = readStore()
-  store.tasks = store.tasks || []
+export async function createTask(payload) {
+  const list = await readCol('tasks')
   const task = {
     id: `task_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
     clientId: payload.clientId != null ? Number(payload.clientId) : null,
@@ -226,28 +240,57 @@ export function createTask(payload) {
     notes: payload.notes || '',
     createdAt: new Date().toISOString(),
   }
-  store.tasks.push(task)
-  writeStore(store)
+  list.push(task)
+  await writeCol('tasks', list)
   return task
 }
-
-export function updateTask(id, patch) {
-  const store = readStore()
-  store.tasks = store.tasks || []
-  const idx = store.tasks.findIndex(t => t.id === id)
+export async function updateTask(id, patch) {
+  const list = await readCol('tasks')
+  const idx = list.findIndex(t => t.id === id)
   if (idx === -1) return null
-  store.tasks[idx] = { ...store.tasks[idx], ...patch, id }
-  writeStore(store)
-  return store.tasks[idx]
+  list[idx] = { ...list[idx], ...patch, id }
+  await writeCol('tasks', list)
+  return list[idx]
 }
-
-export function deleteTask(id) {
-  const store = readStore()
-  store.tasks = (store.tasks || []).filter(t => t.id !== id)
-  writeStore(store)
+export async function deleteTask(id) {
+  const list = await readCol('tasks')
+  await writeCol('tasks', list.filter(t => t.id !== id))
   return true
 }
 
+// ───────── Config ─────────
+export async function getConfig() { return (await readScalar('config')) || {} }
+export async function setConfig(patch) {
+  const cur = (await readScalar('config')) || {}
+  const next = { ...cur, ...patch }
+  await writeScalar('config', next)
+  return next
+}
+
+// ───────── Activities ─────────
+async function pushActivity(entry) {
+  const list = await readCol('activities')
+  const activity = {
+    id: `act_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+    ts: entry.ts || new Date().toISOString(),
+    clientId: entry.clientId != null ? Number(entry.clientId) : null,
+    type: entry.type,
+    payload: entry.payload || {},
+  }
+  list.push(activity)
+  // Trim to last 5000
+  const trimmed = list.length > 5000 ? list.slice(-5000) : list
+  await writeCol('activities', trimmed)
+  return activity
+}
+export async function logActivity(entry) { return await pushActivity(entry) }
+export async function getActivities(clientId) {
+  const list = await readCol('activities')
+  if (clientId != null) return list.filter(a => a.clientId === Number(clientId))
+  return list
+}
+
+// ───────── Prospects ─────────
 export const PROSPECT_STAGES = [
   { id: 'froid',          label: 'Froid',          color: '#7a9bb0', icon: '🧊' },
   { id: 'contacte',       label: 'Contacté',       color: '#6cb6f5', icon: '✉️' },
@@ -259,19 +302,17 @@ export const PROSPECT_STAGES = [
   { id: 'refuse',         label: 'Refusé',         color: '#ff8a89', icon: '❌' },
 ]
 
-export function getProspects() {
-  return readStore().prospects || []
+export async function getProspects() { return await readCol('prospects') }
+export async function getProspect(id) {
+  const list = await readCol('prospects')
+  return list.find(p => p.id === id)
 }
-export function getProspect(id) {
-  return getProspects().find(p => p.id === id)
-}
-export function saveProspect(input) {
-  const store = readStore()
-  store.prospects = store.prospects || []
+export async function saveProspect(input) {
+  const list = await readCol('prospects')
   const isNew = !input.id
   const id = input.id || `prosp_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`
   const now = new Date().toISOString()
-  const prev = isNew ? null : store.prospects.find(p => p.id === id)
+  const prev = isNew ? null : list.find(p => p.id === id)
   const prospect = {
     id,
     nom:           input.nom || '',
@@ -290,198 +331,128 @@ export function saveProspect(input) {
     createdAt:     input.createdAt || (prev ? prev.createdAt : now),
     updatedAt:     now,
   }
-  if (isNew) store.prospects.push(prospect)
+  if (isNew) list.push(prospect)
   else {
-    const idx = store.prospects.findIndex(p => p.id === id)
-    if (idx === -1) store.prospects.push(prospect)
-    else store.prospects[idx] = prospect
+    const idx = list.findIndex(p => p.id === id)
+    if (idx === -1) list.push(prospect)
+    else list[idx] = prospect
   }
-  store.activities = store.activities || []
+  await writeCol('prospects', list)
   if (prev && prev.stage !== prospect.stage) {
-    store.activities.push({
-      id: `act_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+    await pushActivity({
       ts: now, clientId: null,
       type: 'prospect_stage_changed',
       payload: { prospectId: id, entreprise: prospect.entreprise, from: prev.stage, to: prospect.stage },
     })
   }
-  writeStore(store)
   return { prospect, stageChanged: prev && prev.stage !== prospect.stage, previousStage: prev?.stage }
 }
-export function deleteProspect(id) {
-  const store = readStore()
-  store.prospects = (store.prospects || []).filter(p => p.id !== id)
-  writeStore(store)
+export async function deleteProspect(id) {
+  const list = await readCol('prospects')
+  await writeCol('prospects', list.filter(p => p.id !== id))
   return true
 }
 
-// ───────── Visitor tracking ─────────
-export function getPageviews(limit = 200) {
-  const all = readStore().pageviews || []
-  return all.slice(0, limit)
-}
-
-export function getRecentSessions(limit = 50) {
-  const all = readStore().pageviews || []
-  const map = new Map()
-  for (const pv of all) {
-    if (!map.has(pv.sid)) {
-      map.set(pv.sid, {
-        sid: pv.sid,
-        firstSeen: pv.ts, lastSeen: pv.ts,
-        pageviews: 0,
-        urls: [],
-        clientId: pv.clientId || null,
-        identifiedEmail: pv.identifiedEmail || null,
-        ip: pv.ip,
-        ua: pv.ua,
-        referrer: pv.referrer,
-      })
-    }
-    const s = map.get(pv.sid)
-    s.pageviews++
-    if (pv.ts < s.firstSeen) s.firstSeen = pv.ts
-    if (pv.ts > s.lastSeen) s.lastSeen = pv.ts
-    s.urls.push({ url: pv.url, title: pv.title, ts: pv.ts })
-    if (pv.clientId && !s.clientId) s.clientId = pv.clientId
-    if (pv.identifiedEmail && !s.identifiedEmail) s.identifiedEmail = pv.identifiedEmail
-  }
-  return [...map.values()]
-    .sort((a, b) => new Date(b.lastSeen) - new Date(a.lastSeen))
-    .slice(0, limit)
-}
-
-export function savePageview(input) {
-  const store = readStore()
-  store.pageviews = store.pageviews || []
-  const id = `pv_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`
-  const pv = {
+// ───────── LinkedIn posts ─────────
+export async function getLinkedinPosts() { return await readCol('linkedinPosts') }
+export async function saveLinkedinPost(input) {
+  const list = await readCol('linkedinPosts')
+  const isNew = !input.id
+  const id = input.id || `lipost_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`
+  const post = {
     id,
-    sid:   input.sid || 'anon_' + id,
-    ts:    input.ts || new Date().toISOString(),
-    url:   input.url || '',
-    title: input.title || '',
-    referrer: input.referrer || '',
-    ip:    input.ip || null,
-    ua:    input.ua || '',
-    clientId: input.clientId != null ? Number(input.clientId) : null,
-    identifiedEmail: input.identifiedEmail || null,
+    type: input.type || 'tofu',
+    sujet: input.sujet || '',
+    contenu: input.contenu || '',
+    createdAt: input.createdAt || new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
   }
-  store.pageviews.unshift(pv)
-  if (store.pageviews.length > 5000) store.pageviews = store.pageviews.slice(0, 5000)
-  writeStore(store)
-  return pv
-}
-
-export function identifySession(sid, { clientId, email }) {
-  const store = readStore()
-  store.pageviews = store.pageviews || []
-  let updated = 0
-  for (const pv of store.pageviews) {
-    if (pv.sid === sid) {
-      if (clientId != null && !pv.clientId) { pv.clientId = Number(clientId); updated++ }
-      if (email && !pv.identifiedEmail) { pv.identifiedEmail = email; updated++ }
-    }
+  if (isNew) list.unshift(post)
+  else {
+    const idx = list.findIndex(p => p.id === id)
+    if (idx === -1) list.unshift(post); else list[idx] = post
   }
-  writeStore(store)
-  return updated
+  const trimmed = list.length > 100 ? list.slice(0, 100) : list
+  await writeCol('linkedinPosts', trimmed)
+  return post
 }
-
-export function getInboundEmails(clientId) {
-  const all = readStore().inboundEmails || []
-  if (clientId != null) return all.filter(m => m.clientId === Number(clientId))
-  return all
-}
-
-export function getOutboundEmails(clientId) {
-  const all = readStore().outboundEmails || []
-  if (clientId != null) return all.filter(m => m.clientId === Number(clientId))
-  return all
-}
-
-export function saveInboundEmail(input) {
-  const store = readStore()
-  store.inboundEmails = store.inboundEmails || []
-  const id = `in_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`
-  const email = {
-    id,
-    clientId:  input.clientId != null ? Number(input.clientId) : null,
-    fromEmail: input.fromEmail || '',
-    fromName:  input.fromName || '',
-    toEmail:   input.toEmail || '',
-    subject:   input.subject || '(sans objet)',
-    text:      input.text || '',
-    html:      input.html || '',
-    receivedAt: input.receivedAt || new Date().toISOString(),
-    read:      !!input.read,
-  }
-  store.inboundEmails.unshift(email)
-  if (store.inboundEmails.length > 1000) store.inboundEmails = store.inboundEmails.slice(0, 1000)
-  writeStore(store)
-  return email
-}
-
-export function saveOutboundEmail(input) {
-  const store = readStore()
-  store.outboundEmails = store.outboundEmails || []
-  const id = `out_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`
-  const email = {
-    id,
-    clientId: input.clientId != null ? Number(input.clientId) : null,
-    toEmail:  input.toEmail || '',
-    toName:   input.toName || '',
-    subject:  input.subject || '',
-    content:  input.content || '',
-    sentAt:   input.sentAt || new Date().toISOString(),
-  }
-  store.outboundEmails.unshift(email)
-  if (store.outboundEmails.length > 1000) store.outboundEmails = store.outboundEmails.slice(0, 1000)
-  writeStore(store)
-  return email
-}
-
-export function markEmailRead(id, read = true) {
-  const store = readStore()
-  store.inboundEmails = store.inboundEmails || []
-  const idx = store.inboundEmails.findIndex(m => m.id === id)
-  if (idx === -1) return null
-  store.inboundEmails[idx] = { ...store.inboundEmails[idx], read: !!read }
-  writeStore(store)
-  return store.inboundEmails[idx]
-}
-
-export function assignEmailToClient(id, clientId) {
-  const store = readStore()
-  store.inboundEmails = store.inboundEmails || []
-  const idx = store.inboundEmails.findIndex(m => m.id === id)
-  if (idx === -1) return null
-  store.inboundEmails[idx] = { ...store.inboundEmails[idx], clientId: clientId != null ? Number(clientId) : null }
-  writeStore(store)
-  return store.inboundEmails[idx]
-}
-
-export function deleteInboundEmail(id) {
-  const store = readStore()
-  store.inboundEmails = (store.inboundEmails || []).filter(m => m.id !== id)
-  writeStore(store)
+export async function deleteLinkedinPost(id) {
+  const list = await readCol('linkedinPosts')
+  await writeCol('linkedinPosts', list.filter(p => p.id !== id))
   return true
 }
 
-export function findClientByEmail(email) {
-  if (!email) return null
-  const norm = email.toLowerCase().trim()
-  return getClients().find(c => (c.email || '').toLowerCase().trim() === norm) || null
+// ───────── Lists ─────────
+export async function getLists() { return await readCol('lists') }
+export async function getList(id) {
+  const list = await readCol('lists')
+  return list.find(l => l.id === id)
+}
+export async function saveList(input) {
+  const list = await readCol('lists')
+  const isNew = !input.id
+  const id = input.id || `list_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`
+  const ent = {
+    id,
+    name: input.name || 'Nouvelle liste',
+    clientIds: Array.isArray(input.clientIds) ? input.clientIds.map(Number).filter(n => !isNaN(n)) : [],
+    createdAt: input.createdAt || new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  }
+  if (isNew) list.push(ent)
+  else {
+    const idx = list.findIndex(l => l.id === id)
+    if (idx === -1) list.push(ent); else list[idx] = ent
+  }
+  await writeCol('lists', list)
+  return ent
+}
+export async function deleteList(id) {
+  const list = await readCol('lists')
+  await writeCol('lists', list.filter(l => l.id !== id))
+  return true
 }
 
-export function getPaymentLinks(clientId) {
-  const all = readStore().paymentLinks || []
-  if (clientId != null) return all.filter(p => p.clientId === Number(clientId))
-  return all
+// ───────── Email templates ─────────
+export async function getEmailTemplates() { return await readCol('emailTemplates') }
+export async function getEmailTemplate(id) {
+  const list = await readCol('emailTemplates')
+  return list.find(t => t.id === id)
+}
+export async function saveEmailTemplate(input) {
+  const list = await readCol('emailTemplates')
+  const isNew = !input.id
+  const id = input.id || `tpl_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`
+  const tpl = {
+    id,
+    name: input.name || 'Sans titre',
+    subject: input.subject || '',
+    html: input.html || '',
+    createdAt: input.createdAt || new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  }
+  if (isNew) list.push(tpl)
+  else {
+    const idx = list.findIndex(t => t.id === id)
+    if (idx === -1) list.push(tpl); else list[idx] = tpl
+  }
+  await writeCol('emailTemplates', list)
+  return tpl
+}
+export async function deleteEmailTemplate(id) {
+  const list = await readCol('emailTemplates')
+  await writeCol('emailTemplates', list.filter(t => t.id !== id))
+  return true
 }
 
-export function savePaymentLink(input) {
-  const store = readStore()
-  store.paymentLinks = store.paymentLinks || []
+// ───────── Payment links ─────────
+export async function getPaymentLinks(clientId) {
+  const list = await readCol('paymentLinks')
+  if (clientId != null) return list.filter(p => p.clientId === Number(clientId))
+  return list
+}
+export async function savePaymentLink(input) {
+  const list = await readCol('paymentLinks')
   const isNew = !input.id
   const id = input.id || `plink_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`
   const link = {
@@ -498,169 +469,155 @@ export function savePaymentLink(input) {
     createdAt:   input.createdAt || new Date().toISOString(),
     invoiceNumber: input.invoiceNumber || null,
   }
-  if (isNew) store.paymentLinks.unshift(link)
+  if (isNew) list.unshift(link)
   else {
-    const idx = store.paymentLinks.findIndex(p => p.id === id)
-    if (idx === -1) store.paymentLinks.unshift(link)
-    else store.paymentLinks[idx] = link
+    const idx = list.findIndex(p => p.id === id)
+    if (idx === -1) list.unshift(link); else list[idx] = link
   }
-  writeStore(store)
+  await writeCol('paymentLinks', list)
   return link
 }
-
-export function findPaymentLinkByStripeId(stripeId) {
-  return (readStore().paymentLinks || []).find(p => p.stripeId === stripeId)
+export async function findPaymentLinkByStripeId(stripeId) {
+  const list = await readCol('paymentLinks')
+  return list.find(p => p.stripeId === stripeId)
 }
 
-export function getLinkedinPosts() {
-  return readStore().linkedinPosts || []
+// ───────── Pageviews / sessions ─────────
+export async function getPageviews(limit = 200) {
+  const list = await readCol('pageviews')
+  return list.slice(0, limit)
 }
-
-export function saveLinkedinPost(input) {
-  const store = readStore()
-  store.linkedinPosts = store.linkedinPosts || []
-  const isNew = !input.id
-  const id = input.id || `lipost_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`
-  const post = {
+export async function getRecentSessions(limit = 50) {
+  const list = await readCol('pageviews')
+  const map = new Map()
+  for (const pv of list) {
+    if (!map.has(pv.sid)) {
+      map.set(pv.sid, {
+        sid: pv.sid,
+        firstSeen: pv.ts, lastSeen: pv.ts,
+        pageviews: 0, urls: [],
+        clientId: pv.clientId || null,
+        identifiedEmail: pv.identifiedEmail || null,
+        ip: pv.ip, ua: pv.ua, referrer: pv.referrer,
+      })
+    }
+    const s = map.get(pv.sid)
+    s.pageviews++
+    if (pv.ts < s.firstSeen) s.firstSeen = pv.ts
+    if (pv.ts > s.lastSeen) s.lastSeen = pv.ts
+    s.urls.push({ url: pv.url, title: pv.title, ts: pv.ts })
+    if (pv.clientId && !s.clientId) s.clientId = pv.clientId
+    if (pv.identifiedEmail && !s.identifiedEmail) s.identifiedEmail = pv.identifiedEmail
+  }
+  return [...map.values()]
+    .sort((a, b) => new Date(b.lastSeen) - new Date(a.lastSeen))
+    .slice(0, limit)
+}
+export async function savePageview(input) {
+  const list = await readCol('pageviews')
+  const id = `pv_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`
+  const pv = {
     id,
-    type: input.type || 'tofu',
-    sujet: input.sujet || '',
-    contenu: input.contenu || '',
-    createdAt: input.createdAt || new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
+    sid:   input.sid || 'anon_' + id,
+    ts:    input.ts || new Date().toISOString(),
+    url:   input.url || '',
+    title: input.title || '',
+    referrer: input.referrer || '',
+    ip:    input.ip || null,
+    ua:    input.ua || '',
+    clientId: input.clientId != null ? Number(input.clientId) : null,
+    identifiedEmail: input.identifiedEmail || null,
   }
-  if (isNew) store.linkedinPosts.unshift(post)
-  else {
-    const idx = store.linkedinPosts.findIndex(p => p.id === id)
-    if (idx === -1) store.linkedinPosts.unshift(post)
-    else store.linkedinPosts[idx] = post
+  list.unshift(pv)
+  const trimmed = list.length > 5000 ? list.slice(0, 5000) : list
+  await writeCol('pageviews', trimmed)
+  return pv
+}
+export async function identifySession(sid, { clientId, email }) {
+  const list = await readCol('pageviews')
+  let updated = 0
+  for (const pv of list) {
+    if (pv.sid === sid) {
+      if (clientId != null && !pv.clientId) { pv.clientId = Number(clientId); updated++ }
+      if (email && !pv.identifiedEmail) { pv.identifiedEmail = email; updated++ }
+    }
   }
-  if (store.linkedinPosts.length > 100) store.linkedinPosts = store.linkedinPosts.slice(0, 100)
-  writeStore(store)
-  return post
+  if (updated > 0) await writeCol('pageviews', list)
+  return updated
 }
 
-export function deleteLinkedinPost(id) {
-  const store = readStore()
-  store.linkedinPosts = (store.linkedinPosts || []).filter(p => p.id !== id)
-  writeStore(store)
-  return true
-}
-
-export function getLists() {
-  return readStore().lists || []
-}
-
-export function getList(id) {
-  return getLists().find(l => l.id === id)
-}
-
-export function saveList(input) {
-  const store = readStore()
-  store.lists = store.lists || []
-  const isNew = !input.id
-  const id = input.id || `list_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`
-  const list = {
-    id,
-    name: input.name || 'Nouvelle liste',
-    clientIds: Array.isArray(input.clientIds) ? input.clientIds.map(Number).filter(n => !isNaN(n)) : [],
-    createdAt: input.createdAt || new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  }
-  if (isNew) store.lists.push(list)
-  else {
-    const idx = store.lists.findIndex(l => l.id === id)
-    if (idx === -1) store.lists.push(list)
-    else store.lists[idx] = list
-  }
-  writeStore(store)
+// ───────── Inbox / Outbox emails ─────────
+export async function getInboundEmails(clientId) {
+  const list = await readCol('inboundEmails')
+  if (clientId != null) return list.filter(m => m.clientId === Number(clientId))
   return list
 }
-
-export function deleteList(id) {
-  const store = readStore()
-  store.lists = (store.lists || []).filter(l => l.id !== id)
-  writeStore(store)
-  return true
+export async function getOutboundEmails(clientId) {
+  const list = await readCol('outboundEmails')
+  if (clientId != null) return list.filter(m => m.clientId === Number(clientId))
+  return list
 }
-
-export function getEmailTemplates() {
-  return readStore().emailTemplates || []
-}
-
-export function getEmailTemplate(id) {
-  return getEmailTemplates().find(t => t.id === id)
-}
-
-export function saveEmailTemplate(input) {
-  const store = readStore()
-  store.emailTemplates = store.emailTemplates || []
-  const isNew = !input.id
-  const id = input.id || `tpl_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`
-  const tpl = {
+export async function saveInboundEmail(input) {
+  const list = await readCol('inboundEmails')
+  const id = `in_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`
+  const email = {
     id,
-    name: input.name || 'Sans titre',
-    subject: input.subject || '',
-    html: input.html || '',
-    createdAt: input.createdAt || new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
+    clientId:  input.clientId != null ? Number(input.clientId) : null,
+    fromEmail: input.fromEmail || '',
+    fromName:  input.fromName || '',
+    toEmail:   input.toEmail || '',
+    subject:   input.subject || '(sans objet)',
+    text:      input.text || '',
+    html:      input.html || '',
+    receivedAt: input.receivedAt || new Date().toISOString(),
+    read:      !!input.read,
   }
-  if (isNew) store.emailTemplates.push(tpl)
-  else {
-    const idx = store.emailTemplates.findIndex(t => t.id === id)
-    if (idx === -1) store.emailTemplates.push(tpl)
-    else store.emailTemplates[idx] = tpl
-  }
-  writeStore(store)
-  return tpl
+  list.unshift(email)
+  const trimmed = list.length > 1000 ? list.slice(0, 1000) : list
+  await writeCol('inboundEmails', trimmed)
+  return email
 }
-
-export function deleteEmailTemplate(id) {
-  const store = readStore()
-  store.emailTemplates = (store.emailTemplates || []).filter(t => t.id !== id)
-  writeStore(store)
+export async function saveOutboundEmail(input) {
+  const list = await readCol('outboundEmails')
+  const id = `out_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`
+  const email = {
+    id,
+    clientId: input.clientId != null ? Number(input.clientId) : null,
+    toEmail:  input.toEmail || '',
+    toName:   input.toName || '',
+    subject:  input.subject || '',
+    content:  input.content || '',
+    sentAt:   input.sentAt || new Date().toISOString(),
+  }
+  list.unshift(email)
+  const trimmed = list.length > 1000 ? list.slice(0, 1000) : list
+  await writeCol('outboundEmails', trimmed)
+  return email
+}
+export async function markEmailRead(id, read = true) {
+  const list = await readCol('inboundEmails')
+  const idx = list.findIndex(m => m.id === id)
+  if (idx === -1) return null
+  list[idx] = { ...list[idx], read: !!read }
+  await writeCol('inboundEmails', list)
+  return list[idx]
+}
+export async function assignEmailToClient(id, clientId) {
+  const list = await readCol('inboundEmails')
+  const idx = list.findIndex(m => m.id === id)
+  if (idx === -1) return null
+  list[idx] = { ...list[idx], clientId: clientId != null ? Number(clientId) : null }
+  await writeCol('inboundEmails', list)
+  return list[idx]
+}
+export async function deleteInboundEmail(id) {
+  const list = await readCol('inboundEmails')
+  await writeCol('inboundEmails', list.filter(m => m.id !== id))
   return true
 }
-
-export function getConfig() {
-  const store = readStore()
-  return store.config || {}
-}
-
-export function setConfig(patch) {
-  const store = readStore()
-  store.config = { ...(store.config || {}), ...patch }
-  writeStore(store)
-  return store.config
-}
-
-export function logActivity(entry) {
-  const store = readStore()
-  store.activities = store.activities || []
-  const activity = {
-    id: `act_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
-    ts: entry.ts || new Date().toISOString(),
-    clientId: entry.clientId != null ? Number(entry.clientId) : null,
-    type: entry.type,
-    payload: entry.payload || {},
-  }
-  store.activities.push(activity)
-  if (store.activities.length > 5000) store.activities = store.activities.slice(-5000)
-  writeStore(store)
-  return activity
-}
-
-export function getActivities(clientId) {
-  const acts = readStore().activities || []
-  if (clientId != null) return acts.filter(a => a.clientId === Number(clientId))
-  return acts
-}
-
-export function setPaymentStatus(paymentId, status) {
-  const store = readStore()
-  const idx = (store.payments || []).findIndex(p => p.id === paymentId)
-  if (idx === -1) return null
-  store.payments[idx].status = status
-  writeStore(store)
-  return store.payments[idx]
+export async function findClientByEmail(email) {
+  if (!email) return null
+  const norm = email.toLowerCase().trim()
+  const list = await readCol('clients')
+  return list.find(c => (c.email || '').toLowerCase().trim() === norm) || null
 }

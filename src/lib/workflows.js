@@ -1,8 +1,6 @@
-import fs from 'fs'
-import path from 'path'
+import { kv } from '@vercel/kv'
 
-const DATA_DIR = path.join(process.cwd(), 'data')
-const WF_FILE = path.join(DATA_DIR, 'workflows.json')
+const KEY = 'nerixi:workflows'
 
 export const TRIGGER_TYPES = [
   { type: 'client.created',         label: 'Nouveau client',          icon: '🌟' },
@@ -20,77 +18,69 @@ export const ACTION_TYPES = [
   { type: 'log_note',       label: 'Ajouter une note',  icon: '📝' },
 ]
 
-function ensureDir() {
-  try { fs.mkdirSync(DATA_DIR, { recursive: true }) } catch {}
-}
-
-function read() {
-  ensureDir()
-  if (!fs.existsSync(WF_FILE)) {
-    const seed = defaultWorkflows()
-    fs.writeFileSync(WF_FILE, JSON.stringify(seed, null, 2))
-    return seed
-  }
-  try { return JSON.parse(fs.readFileSync(WF_FILE, 'utf8')) } catch { return { workflows: [] } }
-}
-
-function write(data) {
-  ensureDir()
-  fs.writeFileSync(WF_FILE, JSON.stringify(data, null, 2))
+let seedPromise = null
+async function ensureSeeded() {
+  if (seedPromise) return seedPromise
+  seedPromise = (async () => {
+    const flag = await kv.get(KEY + ':seeded')
+    if (flag) return
+    await kv.set(KEY, defaultWorkflows())
+    await kv.set(KEY + ':seeded', Date.now())
+  })()
+  return seedPromise
 }
 
 function defaultWorkflows() {
-  return {
-    workflows: [
-      {
-        id: 'wf_seed_welcome',
-        name: 'Bienvenue nouveau client',
-        enabled: false,
-        createdAt: new Date().toISOString(),
-        trigger: { type: 'client.created', config: {} },
-        actions: [
-          { id: 'a1', type: 'send_email',   config: { template: 'welcome', subject: 'Bienvenue chez Nerixi !', content: 'Bonjour {prenom},\n\nMerci de nous faire confiance.' } },
-          { id: 'a2', type: 'create_event', config: { title: 'Premier point de cadrage', daysFromNow: 3, time: '10:00', type: 'meeting' } },
-          { id: 'a3', type: 'trigger_n8n',  config: { url: '' } },
-        ],
-      },
-      {
-        id: 'wf_seed_paid',
-        name: 'Paiement reçu — confirmation',
-        enabled: false,
-        createdAt: new Date().toISOString(),
-        trigger: { type: 'payment.received', config: {} },
-        actions: [
-          { id: 'a1', type: 'send_email', config: { template: 'thanks', subject: 'Merci pour votre paiement', content: 'Bonjour {prenom},\n\nNous confirmons la bonne réception de votre paiement.' } },
-          { id: 'a2', type: 'log_note',  config: { note: 'Paiement reçu — confirmation envoyée' } },
-        ],
-      },
-      {
-        id: 'wf_seed_actif',
-        name: 'Passage en Actif',
-        enabled: false,
-        createdAt: new Date().toISOString(),
-        trigger: { type: 'client.status_changed', config: { to: 'actif' } },
-        actions: [
-          { id: 'a1', type: 'create_event', config: { title: 'Démarrage projet · {entreprise}', daysFromNow: 2, time: '09:30', type: 'meeting' } },
-          { id: 'a2', type: 'trigger_n8n',  config: { url: '' } },
-        ],
-      },
-    ],
-  }
+  return [
+    {
+      id: 'wf_seed_welcome',
+      name: 'Bienvenue nouveau client',
+      enabled: false,
+      createdAt: new Date().toISOString(),
+      trigger: { type: 'client.created', config: {} },
+      actions: [
+        { id: 'a1', type: 'send_email',   config: { template: 'welcome', subject: 'Bienvenue chez Nerixi !', content: 'Bonjour {prenom},\n\nMerci de nous faire confiance.' } },
+        { id: 'a2', type: 'create_event', config: { title: 'Premier point de cadrage', daysFromNow: 3, time: '10:00', type: 'meeting' } },
+        { id: 'a3', type: 'trigger_n8n',  config: { url: '' } },
+      ],
+    },
+    {
+      id: 'wf_seed_paid',
+      name: 'Paiement reçu — confirmation',
+      enabled: false,
+      createdAt: new Date().toISOString(),
+      trigger: { type: 'payment.received', config: {} },
+      actions: [
+        { id: 'a1', type: 'send_email', config: { template: 'thanks', subject: 'Merci pour votre paiement', content: 'Bonjour {prenom},\n\nNous confirmons la bonne réception de votre paiement.' } },
+        { id: 'a2', type: 'log_note',  config: { note: 'Paiement reçu — confirmation envoyée' } },
+      ],
+    },
+    {
+      id: 'wf_seed_actif',
+      name: 'Passage en Actif',
+      enabled: false,
+      createdAt: new Date().toISOString(),
+      trigger: { type: 'client.status_changed', config: { to: 'actif' } },
+      actions: [
+        { id: 'a1', type: 'create_event', config: { title: 'Démarrage projet · {entreprise}', daysFromNow: 2, time: '09:30', type: 'meeting' } },
+        { id: 'a2', type: 'trigger_n8n',  config: { url: '' } },
+      ],
+    },
+  ]
 }
 
-export function getWorkflows() {
-  return read().workflows || []
+export async function getWorkflows() {
+  await ensureSeeded()
+  return (await kv.get(KEY)) || []
 }
 
-export function getWorkflow(id) {
-  return getWorkflows().find(w => w.id === id)
+export async function getWorkflow(id) {
+  const list = await getWorkflows()
+  return list.find(w => w.id === id)
 }
 
-export function saveWorkflow(input) {
-  const data = read()
-  const wfs = data.workflows || []
+export async function saveWorkflow(input) {
+  const wfs = await getWorkflows()
   const isNew = !input.id
   const id = input.id || `wf_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`
   const wf = {
@@ -104,18 +94,15 @@ export function saveWorkflow(input) {
   if (isNew) wfs.push(wf)
   else {
     const idx = wfs.findIndex(w => w.id === id)
-    if (idx === -1) wfs.push(wf)
-    else wfs[idx] = wf
+    if (idx === -1) wfs.push(wf); else wfs[idx] = wf
   }
-  data.workflows = wfs
-  write(data)
+  await kv.set(KEY, wfs)
   return wf
 }
 
-export function deleteWorkflow(id) {
-  const data = read()
-  data.workflows = (data.workflows || []).filter(w => w.id !== id)
-  write(data)
+export async function deleteWorkflow(id) {
+  const wfs = await getWorkflows()
+  await kv.set(KEY, wfs.filter(w => w.id !== id))
 }
 
 function triggerMatches(wf, eventType, ctx) {
@@ -165,7 +152,7 @@ async function executeAction(action, ctx) {
       const days = Number(cfg.daysFromNow) || 0
       const date = new Date(Date.now() + days * 86400000).toISOString().slice(0, 10)
       const { createEvent } = await import('./store.js')
-      const ev = createEvent({
+      const ev = await createEvent({
         clientId: client?.id,
         date,
         time: cfg.time || '09:00',
@@ -197,12 +184,12 @@ async function executeAction(action, ctx) {
       const { updateClient } = await import('./store.js')
       const newStatus = cfg.to || 'actif'
       if (newStatus === client.statut) return { skipped: 'same_status' }
-      const result = updateClient(client.id, { ...client, statut: newStatus })
+      const result = await updateClient(client.id, { ...client, statut: newStatus })
       return { type: 'update_status', success: !!result?.client, newStatus }
     }
     if (action.type === 'log_note') {
       const { logActivity } = await import('./store.js')
-      logActivity({
+      await logActivity({
         clientId: client?.id,
         type: 'workflow_note',
         payload: { note: interpolate(cfg.note || '', vars) },
@@ -216,7 +203,8 @@ async function executeAction(action, ctx) {
 }
 
 export async function runWorkflowsForEvent(eventType, ctx = {}) {
-  const wfs = getWorkflows().filter(w => w.enabled && triggerMatches(w, eventType, ctx))
+  const all = await getWorkflows()
+  const wfs = all.filter(w => w.enabled && triggerMatches(w, eventType, ctx))
   if (wfs.length === 0) return { ran: 0, results: [] }
 
   const { logActivity } = await import('./store.js')
@@ -227,7 +215,7 @@ export async function runWorkflowsForEvent(eventType, ctx = {}) {
       const r = await executeAction(action, ctx)
       actionResults.push({ actionId: action.id, type: action.type, ...r })
     }
-    logActivity({
+    await logActivity({
       clientId: ctx.client?.id || null,
       type: 'workflow_executed',
       payload: { workflowId: wf.id, name: wf.name, eventType, results: actionResults },

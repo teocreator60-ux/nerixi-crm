@@ -2,7 +2,8 @@
   "permissions": {
     "allow": [
       "Bash(timeout 90 npx next build)",
-      "Bash(npx --no-install next build)"
+      "Bash(npx --no-install next build)",
+      "Bash(npm install *)"
     ]
   }
 }

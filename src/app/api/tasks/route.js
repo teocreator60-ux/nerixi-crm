@@ -11,7 +11,7 @@ export async function GET(request) {
   if (!requireAuth()) return Response.json({ error: 'Unauthorized' }, { status: 401 })
   const { searchParams } = new URL(request.url)
   const clientId = searchParams.get('clientId')
-  return Response.json({ tasks: getTasks(clientId) })
+  return Response.json({ tasks: await getTasks(clientId) })
 }
 
 export async function POST(request) {
@@ -19,7 +19,7 @@ export async function POST(request) {
   try {
     const payload = await request.json()
     if (!payload.title) return Response.json({ error: 'title requis' }, { status: 400 })
-    const task = createTask(payload)
+    const task = await createTask(payload)
     return Response.json({ task })
   } catch (e) {
     return Response.json({ error: e.message }, { status: 400 })

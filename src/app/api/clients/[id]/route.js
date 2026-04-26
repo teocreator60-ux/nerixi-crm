@@ -45,7 +45,7 @@ async function fireStatusWebhook(client, fromStatus) {
 
 export async function GET(_req, { params }) {
   if (!requireAuth()) return Response.json({ error: 'Unauthorized' }, { status: 401 })
-  const c = getClient(params.id)
+  const c = await getClient(params.id)
   if (!c) return Response.json({ error: 'Not found' }, { status: 404 })
   return Response.json({ client: c })
 }
@@ -54,7 +54,7 @@ export async function PUT(request, { params }) {
   if (!requireAuth()) return Response.json({ error: 'Unauthorized' }, { status: 401 })
   try {
     const patch = await request.json()
-    const result = updateClient(params.id, patch)
+    const result = await updateClient(params.id, patch)
     if (!result) return Response.json({ error: 'Not found' }, { status: 404 })
 
     let webhook = null
@@ -81,6 +81,6 @@ export async function PUT(request, { params }) {
 
 export async function DELETE(_req, { params }) {
   if (!requireAuth()) return Response.json({ error: 'Unauthorized' }, { status: 401 })
-  const ok = deleteClient(params.id)
+  const ok = await deleteClient(params.id)
   return Response.json({ success: ok })
 }

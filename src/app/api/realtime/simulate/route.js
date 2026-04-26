@@ -11,7 +11,7 @@ export async function POST(request) {
   let payload = {}
   try { payload = await request.json() } catch {}
 
-  const clients = getClients()
+  const clients = await getClients()
   const client = payload.clientId
     ? clients.find(c => c.id === Number(payload.clientId))
     : clients[Math.floor(Math.random() * clients.length)] || null
@@ -36,7 +36,7 @@ export async function POST(request) {
   })
 
   if (client) {
-    logActivity({
+    await logActivity({
       clientId: client.id,
       type: 'payment_simulated',
       payload: { amount, currency: 'eur' },

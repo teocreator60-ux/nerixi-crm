@@ -10,7 +10,7 @@ function requireAuth() {
 
 export async function POST(request, { params }) {
   if (!requireAuth()) return Response.json({ error: 'Unauthorized' }, { status: 401 })
-  const p = getProspect(params.id)
+  const p = await getProspect(params.id)
   if (!p) return Response.json({ error: 'Not found' }, { status: 404 })
 
   let body = {}
@@ -18,7 +18,7 @@ export async function POST(request, { params }) {
   const ALLOWED = ['prospect', 'en-cours', 'actif', 'churné']
   const targetStatut = ALLOWED.includes(body.statut) ? body.statut : 'en-cours'
 
-  const client = createClient({
+  const client = await createClient({
     nom: p.nom,
     entreprise: p.entreprise,
     email: p.email,
@@ -33,7 +33,7 @@ export async function POST(request, { params }) {
     tags: [p.source || 'prospection'].filter(Boolean),
   })
 
-  logActivity({
+  await logActivity({
     clientId: client.id,
     type: 'converted_from_prospect',
     payload: { prospectId: p.id, entreprise: p.entreprise },
@@ -41,7 +41,7 @@ export async function POST(request, { params }) {
 
   runWorkflowsForEvent('client.created', { client }).catch(() => {})
 
-  deleteProspect(params.id)
+  await deleteProspect(params.id)
 
   return Response.json({ client })
 }

@@ -10,14 +10,14 @@ function requireAuth() {
 
 export async function GET() {
   if (!requireAuth()) return Response.json({ error: 'Unauthorized' }, { status: 401 })
-  return Response.json({ clients: getClients() })
+  return Response.json({ clients: await getClients() })
 }
 
 export async function POST(request) {
   if (!requireAuth()) return Response.json({ error: 'Unauthorized' }, { status: 401 })
   try {
     const payload = await request.json()
-    const client = createClient(payload)
+    const client = await createClient(payload)
     runWorkflowsForEvent('client.created', { client }).catch(() => {})
     return Response.json({ client })
   } catch (e) {

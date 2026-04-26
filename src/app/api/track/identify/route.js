@@ -25,11 +25,11 @@ export async function POST(request) {
   const email = body.email || null
 
   if (email && !clientId) {
-    const c = findClientByEmail(email)
+    const c = await findClientByEmail(email)
     if (c) clientId = c.id
   }
 
-  const updated = identifySession(sid, { clientId, email })
+  const updated = await identifySession(sid, { clientId, email })
 
   return Response.json({ ok: true, updated, clientId, email }, { headers: corsHeaders() })
 }

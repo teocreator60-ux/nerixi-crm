@@ -11,7 +11,7 @@ export async function PUT(request, { params }) {
   if (!requireAuth()) return Response.json({ error: 'Unauthorized' }, { status: 401 })
   try {
     const patch = await request.json()
-    const updated = updateEvent(params.id, patch)
+    const updated = await updateEvent(params.id, patch)
     if (!updated) return Response.json({ error: 'Not found' }, { status: 404 })
     return Response.json({ event: updated })
   } catch (e) {
@@ -21,6 +21,6 @@ export async function PUT(request, { params }) {
 
 export async function DELETE(_req, { params }) {
   if (!requireAuth()) return Response.json({ error: 'Unauthorized' }, { status: 401 })
-  deleteEvent(params.id)
+  await deleteEvent(params.id)
   return Response.json({ success: true })
 }

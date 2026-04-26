@@ -9,14 +9,14 @@ function requireAuth() {
 
 export async function GET() {
   if (!requireAuth()) return Response.json({ error: 'Unauthorized' }, { status: 401 })
-  return Response.json({ prospects: getProspects() })
+  return Response.json({ prospects: await getProspects() })
 }
 
 export async function POST(request) {
   if (!requireAuth()) return Response.json({ error: 'Unauthorized' }, { status: 401 })
   try {
     const payload = await request.json()
-    const result = saveProspect(payload)
+    const result = await saveProspect(payload)
     return Response.json({ prospect: result.prospect })
   } catch (e) {
     return Response.json({ error: e.message }, { status: 400 })
