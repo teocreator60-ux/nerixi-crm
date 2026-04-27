@@ -1140,9 +1140,9 @@ export default function Home() {
       </aside>
 
       {/* Main content */}
-      <main className="main-content page-transition" style={{ flex: 1, padding: 36, overflowY: 'auto', minWidth: 0, position: 'relative' }} key={activeTab}>
+      <main className="main-content page-transition" style={{ flex: '1 1 0%', padding: '24px 20px', overflowY: 'auto', overflowX: 'hidden', minWidth: 0, position: 'relative' }} key={activeTab}>
         {activeTab === 'Dashboard' && <AmbientBackground density={28} />}
-        <div style={{ position: 'relative', zIndex: 1 }}>
+        <div style={{ position: 'relative', zIndex: 1, width: '100%', minWidth: 0 }}>
 
         {loadingData && (
           <div style={{ position: 'fixed', top: 12, right: 16, zIndex: 30, fontSize: 11.5, color: 'var(--nerixi-muted)', display: 'flex', alignItems: 'center', gap: 6 }}>
