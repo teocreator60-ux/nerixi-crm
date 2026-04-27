@@ -1647,6 +1647,238 @@ label {
   max-width: 100%;
 }
 
+/* ========================================== */
+/* 12 polish animations                       */
+/* ========================================== */
+
+/* 1. Cursor light follow (Vercel-style) — pure visual layer */
+.cursor-light {
+  position: fixed;
+  pointer-events: none;
+  width: 480px; height: 480px;
+  border-radius: 50%;
+  background: radial-gradient(circle at center, rgba(0, 232, 154, 0.13), rgba(0, 232, 154, 0.04) 30%, transparent 65%);
+  mix-blend-mode: screen;
+  z-index: 1;
+  transform: translate3d(-50%, -50%, 0);
+  transition: opacity 0.3s ease;
+  opacity: 0;
+  will-change: left, top, opacity;
+}
+.cursor-light.is-visible { opacity: 1; }
+
+/* 2. Magnetic interaction — applied via inline style */
+.magnetic {
+  transition: transform 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+  will-change: transform;
+}
+
+/* 3. Animated gradient borders */
+@keyframes border-spin {
+  to { --gb-angle: 360deg; }
+}
+@property --gb-angle {
+  syntax: '<angle>';
+  initial-value: 0deg;
+  inherits: false;
+}
+.glow-border {
+  position: relative;
+  isolation: isolate;
+}
+.glow-border::before {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  padding: 1.5px;
+  background: conic-gradient(
+    from var(--gb-angle, 0deg),
+    transparent 0deg, transparent 80deg,
+    rgba(0, 232, 154, 0.85) 110deg,
+    rgba(54, 230, 196, 0.5) 140deg,
+    transparent 180deg, transparent 360deg
+  );
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+          mask-composite: exclude;
+  opacity: 0;
+  transition: opacity 0.35s ease;
+  pointer-events: none;
+  z-index: 2;
+}
+.glow-border:hover::before {
+  opacity: 1;
+  animation: border-spin 4s linear infinite;
+}
+/* Fallback for browsers without @property support — static dégradé */
+@supports not (background: conic-gradient(from 0deg, transparent, white)) {
+  .glow-border:hover::before {
+    background: linear-gradient(120deg, transparent 30%, rgba(0, 232, 154, 0.7) 50%, transparent 70%);
+  }
+}
+
+/* 4. Reveal on scroll */
+.reveal {
+  opacity: 0;
+  transform: translateY(24px);
+  transition: opacity 0.6s cubic-bezier(0.22, 1, 0.36, 1), transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+  will-change: opacity, transform;
+}
+.reveal.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+.reveal-stagger > * { transition-delay: var(--stagger-delay, 0s); }
+.reveal-stagger > *:nth-child(1) { --stagger-delay: 0s; }
+.reveal-stagger > *:nth-child(2) { --stagger-delay: 0.07s; }
+.reveal-stagger > *:nth-child(3) { --stagger-delay: 0.14s; }
+.reveal-stagger > *:nth-child(4) { --stagger-delay: 0.21s; }
+.reveal-stagger > *:nth-child(5) { --stagger-delay: 0.28s; }
+.reveal-stagger > *:nth-child(6) { --stagger-delay: 0.35s; }
+
+/* 5. Animated gradient text */
+@keyframes grad-text-shift {
+  0%, 100% { background-position: 0% 50%; }
+  50%      { background-position: 100% 50%; }
+}
+.grad-text {
+  background: linear-gradient(120deg, var(--nerixi-text) 0%, var(--nerixi-accent) 35%, var(--nerixi-accent-2) 60%, var(--nerixi-text) 100%);
+  background-size: 280% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: grad-text-shift 6s ease-in-out infinite;
+}
+
+/* 6. 3D Tilt — applied via inline style transform */
+.tilt-3d {
+  transition: transform 0.18s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.25s ease;
+  will-change: transform;
+  transform-style: preserve-3d;
+}
+
+/* 7. Dynamic Island toasts */
+@keyframes island-in {
+  0%   { transform: translate(-50%, -120%) scale(0.4); opacity: 0; border-radius: 999px; }
+  60%  { transform: translate(-50%, 0) scale(1.05); opacity: 1; border-radius: 26px; }
+  100% { transform: translate(-50%, 0) scale(1); opacity: 1; border-radius: 22px; }
+}
+@keyframes island-out {
+  to { transform: translate(-50%, -120%) scale(0.5); opacity: 0; border-radius: 999px; }
+}
+.island-stack {
+  position: fixed;
+  top: 18px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 220;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: center;
+  pointer-events: none;
+  width: max-content;
+  max-width: min(94vw, 480px);
+}
+.island {
+  pointer-events: auto;
+  background: linear-gradient(165deg, rgba(15, 25, 48, 0.96), rgba(8, 16, 30, 0.96));
+  border: 1px solid rgba(0, 200, 120, 0.35);
+  backdrop-filter: blur(20px) saturate(160%);
+  -webkit-backdrop-filter: blur(20px) saturate(160%);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.04), 0 0 24px rgba(0, 200, 120, 0.18);
+  padding: 10px 14px 10px 12px;
+  border-radius: 22px;
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  min-width: 280px;
+  max-width: 460px;
+  animation: island-in 0.55s cubic-bezier(0.22, 1.2, 0.36, 1) both;
+  position: relative;
+  overflow: hidden;
+}
+.island.is-leaving { animation: island-out 0.4s cubic-bezier(0.7, 0, 0.84, 0) forwards; }
+.island.is-fail { border-color: rgba(226, 75, 74, 0.4); box-shadow: 0 12px 40px rgba(0,0,0,0.6), 0 0 24px rgba(226, 75, 74, 0.25); }
+.island.is-refund { border-color: rgba(184, 156, 255, 0.4); box-shadow: 0 12px 40px rgba(0,0,0,0.6), 0 0 24px rgba(184, 156, 255, 0.25); }
+.island .icon {
+  width: 36px; height: 36px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, var(--nerixi-green), var(--nerixi-accent-2));
+  color: #06101f;
+  display: inline-flex; align-items: center; justify-content: center;
+  font-size: 18px; font-weight: 800;
+  flex-shrink: 0;
+}
+.island.is-fail .icon { background: linear-gradient(135deg, #e24b4a, #ff8a89); }
+.island.is-refund .icon { background: linear-gradient(135deg, #b89cff, #d0c0ff); }
+.island .body { flex: 1; min-width: 0; }
+.island .title { font-size: 12.5px; font-weight: 700; color: var(--nerixi-text); }
+.island .amount { font-size: 16px; font-weight: 800; color: var(--nerixi-accent); margin-top: 1px; }
+.island .sub { font-size: 11px; color: var(--nerixi-muted); margin-top: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.island .close { background: transparent; border: none; color: var(--nerixi-muted); cursor: pointer; font-size: 13px; padding: 0 2px; }
+
+/* 8. Sidebar tab indicator slide */
+.sidebar-tabs {
+  position: relative;
+}
+.sidebar-tab-indicator {
+  position: absolute;
+  left: 0;
+  width: 3px;
+  background: var(--nerixi-green);
+  border-radius: 0 3px 3px 0;
+  box-shadow: 0 0 14px rgba(0, 232, 154, 0.55);
+  transition: top 0.35s cubic-bezier(0.22, 1, 0.36, 1), height 0.35s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.25s ease;
+  z-index: 1;
+  pointer-events: none;
+}
+.tab-btn { position: relative; }
+.tab-btn.active { border-left-color: transparent !important; } /* Disable the old border, use the indicator */
+
+/* 9. Logo breathe */
+@keyframes logo-breathe {
+  0%, 100% { filter: drop-shadow(0 0 14px rgba(0, 232, 154, 0.25)); }
+  50%      { filter: drop-shadow(0 0 28px rgba(0, 232, 154, 0.65)); }
+}
+.logo-breathe { animation: logo-breathe 3.6s ease-in-out infinite; }
+
+/* 10. Typewriter cursor */
+@keyframes tw-blink { 0%, 50% { opacity: 1 } 51%, 100% { opacity: 0 } }
+.tw-caret {
+  display: inline-block;
+  width: 2px; height: 1em;
+  background: var(--nerixi-accent);
+  vertical-align: text-bottom;
+  margin-left: 2px;
+  animation: tw-blink 0.85s step-end infinite;
+}
+
+/* 11. Action ripple */
+@keyframes ripple-expand {
+  to { transform: scale(2.5); opacity: 0; }
+}
+.ripple {
+  position: absolute;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(0, 232, 154, 0.45) 0%, rgba(0, 232, 154, 0) 70%);
+  pointer-events: none;
+  transform: scale(0);
+  animation: ripple-expand 0.65s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  z-index: 0;
+}
+
+/* 12. Drag preview ghost (Kanban + Pipeline) — enhance existing */
+.kanban-card.is-dragging,
+.pipe-card.is-dragging {
+  opacity: 0.92 !important;
+  cursor: grabbing !important;
+  transform: rotate(-2.5deg) scale(1.05) !important;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.5), 0 0 0 1px var(--nerixi-green), 0 0 30px rgba(0, 232, 154, 0.4) !important;
+  z-index: 50 !important;
+}
+
 /* ---------------------------------- */
 /* Skeleton loaders                   */
 /* ---------------------------------- */

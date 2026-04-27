@@ -33,6 +33,8 @@ import Pipeline from '@/components/Pipeline'
 import Inbox from '@/components/Inbox'
 import PaymentLinkButton from '@/components/PaymentLink'
 import VisitorPanel from '@/components/VisitorPanel'
+import CursorLight from '@/components/CursorLight'
+import { useGlobalRipple, useRevealOnScroll, useTilt3D } from '@/lib/interactions'
 
 const TABS = [
   { id: 'Dashboard',   icon: '📊' },
@@ -187,13 +189,13 @@ function formatDate(unix) {
 
 function StatCard({ label, value, sub, icon, dataAttr }) {
   return (
-    <div className="card fade-in-up" {...(dataAttr ? { 'data-stat': dataAttr } : {})} style={{ position: 'relative', overflow: 'hidden' }}>
+    <div className="card fade-in-up glow-border" {...(dataAttr ? { 'data-stat': dataAttr } : {})} style={{ position: 'relative', overflow: 'hidden' }}>
       <div style={{ position: 'absolute', top: -30, right: -30, width: 120, height: 120, background: 'radial-gradient(circle, rgba(0,200,120,0.12), transparent 70%)', borderRadius: '50%' }} />
       <div style={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
         <p style={{ fontSize: 12, color: 'var(--nerixi-muted)', textTransform: 'uppercase', letterSpacing: 0.6, fontWeight: 600 }}>{label}</p>
         {icon && <span style={{ fontSize: 18 }}>{icon}</span>}
       </div>
-      <p style={{ fontSize: 30, fontWeight: 800, color: 'var(--nerixi-text)', letterSpacing: -0.5 }}>{value}</p>
+      <p className="grad-text" style={{ fontSize: 30, fontWeight: 800, letterSpacing: -0.5 }}>{value}</p>
       {sub && <p style={{ fontSize: 12, color: 'var(--nerixi-muted)', marginTop: 6 }}>{sub}</p>}
     </div>
   )
@@ -201,8 +203,9 @@ function StatCard({ label, value, sub, icon, dataAttr }) {
 
 function ClientCard({ client, onClick, onEdit }) {
   const onb = client.onboarding
+  const tiltRef = useTilt3D({ max: 4, scale: 1.015 })
   return (
-    <div className="card card-hover fade-in-up" onClick={() => onClick(client)} style={{ position: 'relative' }}>
+    <div ref={tiltRef} className="card card-hover fade-in-up tilt-3d" onClick={() => onClick(client)} style={{ position: 'relative' }}>
       <button onClick={(e) => { e.stopPropagation(); onEdit(client) }}
         style={{ position: 'absolute', top: 12, right: 12, width: 28, height: 28, borderRadius: 8, background: 'rgba(255,255,255,0.04)', border: '1px solid var(--nerixi-border)', color: 'var(--nerixi-muted)', cursor: 'pointer', fontSize: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.2s ease' }}
         onMouseEnter={e => { e.currentTarget.style.background = 'rgba(0,200,120,0.15)'; e.currentTarget.style.color = 'var(--nerixi-accent)' }}
@@ -826,6 +829,10 @@ export default function Home() {
 
   useEffect(() => { setSoundOnState(isSoundEnabled()) }, [])
 
+  // Animations globales
+  useGlobalRipple()
+  useRevealOnScroll([activeTab, clients.length])
+
   const pushToast = (toast) => {
     const id = `t_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`
     setToasts(prev => [...prev.slice(-4), { id, ...toast }])
@@ -1048,6 +1055,7 @@ export default function Home() {
 
   return (
     <div style={{ display: 'flex', minHeight: '100vh' }} className="fade-in">
+      <CursorLight />
       <button className="mobile-toggle" onClick={() => setSidebarOpen(s => !s)} aria-label="Menu">
         {sidebarOpen ? '✕' : '☰'}
       </button>
@@ -1065,11 +1073,19 @@ export default function Home() {
         position: 'sticky', top: 0, height: '100vh'
       }}>
         <div style={{ padding: '4px 22px 18px', borderBottom: '1px solid var(--nerixi-border)', marginBottom: 14 }}>
-          <img src="/logo-nerixi.jpg" alt="Nerixi" style={{ width: '100%', maxWidth: 160, height: 'auto', display: 'block', marginBottom: 6 }} />
+          <img src="/logo-nerixi.jpg" alt="Nerixi" className="logo-breathe" style={{ width: '100%', maxWidth: 160, height: 'auto', display: 'block', marginBottom: 6 }} />
           <p style={{ fontSize: 10.5, color: 'var(--nerixi-muted)', textTransform: 'uppercase', letterSpacing: 1.5, fontWeight: 600 }}>CRM Dashboard</p>
         </div>
 
-        <div style={{ display: 'flex', flexDirection: 'column' }}>
+        <div className="sidebar-tabs" style={{ display: 'flex', flexDirection: 'column', position: 'relative' }}>
+          <div
+            className="sidebar-tab-indicator"
+            style={{
+              top: TABS.findIndex(t => t.id === activeTab) * 46 + 8,
+              height: 30,
+              opacity: TABS.findIndex(t => t.id === activeTab) >= 0 ? 1 : 0,
+            }}
+          />
           {TABS.map((tab, i) => (
             <button
               key={tab.id}
@@ -1155,7 +1171,7 @@ export default function Home() {
           <div className="fade-in">
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 24, gap: 14, flexWrap: 'wrap' }}>
               <div>
-                <h1 className="h1-page" style={{ fontSize: 28, fontWeight: 800, letterSpacing: -0.5 }}>Tableau de bord</h1>
+                <h1 className="h1-page grad-text" style={{ fontSize: 28, fontWeight: 800, letterSpacing: -0.5 }}>Tableau de bord</h1>
                 <p style={{ color: 'var(--nerixi-muted)', marginTop: 6 }}>Vue d'ensemble de ton activité Nerixi</p>
               </div>
               <div className="dash-actions">
@@ -1189,7 +1205,7 @@ export default function Home() {
               </div>
             )}
 
-            <div className="grid-auto-stats" style={{ marginBottom: 22 }}>
+            <div className="grid-auto-stats reveal reveal-stagger" style={{ marginBottom: 22 }}>
               <StatCard
                 label="MRR Total"
                 value={<CountUp value={stats.mrr_total} format={v => `${Math.round(v).toLocaleString('fr-FR')}€`} />}
@@ -1201,25 +1217,25 @@ export default function Home() {
               <StatCard label="Clients actifs" value={<CountUp value={stats.clients_actifs} />}                                                                   sub={`+ ${stats.clients_en_cours} en cours`} icon="🚀" />
             </div>
 
-            <div style={{ marginBottom: 22 }}>
+            <div className="reveal" style={{ marginBottom: 22 }}>
               <MRRChart clients={clients} />
             </div>
 
-            <div className="grid-auto-lg" style={{ marginBottom: 22 }}>
+            <div className="grid-auto-lg reveal" style={{ marginBottom: 22 }}>
               <MRRForecastChart clients={clients} />
               <LTVCard clients={clients} />
             </div>
 
-            <div className="grid-auto-md" style={{ marginBottom: 22 }}>
+            <div className="grid-auto-md reveal" style={{ marginBottom: 22 }}>
               <CohortHeatmap clients={clients} />
               <StatusBreakdown clients={clients} />
             </div>
 
-            <div style={{ marginBottom: 22 }}>
+            <div className="reveal" style={{ marginBottom: 22 }}>
               <ClientGrowthChart clients={clients} />
             </div>
 
-            <div className="grid-auto-md" style={{ marginBottom: 22 }}>
+            <div className="grid-auto-md reveal" style={{ marginBottom: 22 }}>
               <UrgentTasksPanel
                 tasks={tasks} clients={clients}
                 onUpdate={updateTaskFn} onDelete={deleteTaskFn}
@@ -1229,13 +1245,13 @@ export default function Home() {
                 onSelect={setSelectedClient} />
             </div>
 
-            <div style={{ marginBottom: 22 }}>
+            <div className="reveal" style={{ marginBottom: 22 }}>
               <VisitorPanel clients={clients} onSelectClient={setSelectedClient} />
             </div>
 
-            <div style={{ marginBottom: 22 }}>
+            <div className="reveal" style={{ marginBottom: 22 }}>
               <h2 style={{ fontSize: 16, fontWeight: 700, marginBottom: 16 }}>Clients récents</h2>
-              <div className="grid-auto-cards stagger">
+              <div className="grid-auto-cards reveal-stagger">
                 {clients.slice(0, 4).map(c => (
                   <ClientCard key={c.id} client={c} onClick={setSelectedClient} onEdit={setEditingClient} />
                 ))}

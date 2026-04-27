@@ -9,36 +9,41 @@ function formatMoney(cents, currency = 'eur') {
 
 export function RealtimeToastStack({ toasts, onDismiss }) {
   return (
-    <div className="rt-toast-stack">
-      {toasts.map(t => <RealtimeToast key={t.id} toast={t} onDismiss={onDismiss} />)}
+    <div className="island-stack">
+      {toasts.map(t => <Island key={t.id} toast={t} onDismiss={onDismiss} />)}
     </div>
   )
 }
 
-function RealtimeToast({ toast, onDismiss }) {
+function Island({ toast, onDismiss }) {
   const [leaving, setLeaving] = useState(false)
 
   useEffect(() => {
     const t = setTimeout(() => {
       setLeaving(true)
-      setTimeout(() => onDismiss(toast.id), 350)
+      setTimeout(() => onDismiss(toast.id), 420)
     }, toast.duration || 6000)
     return () => clearTimeout(t)
   }, [toast.id])
 
   const isFail = toast.kind === 'fail'
   const isRefund = toast.kind === 'refund'
-  const cls = `rt-toast ${leaving ? 'is-leaving' : ''} ${isFail ? 'is-fail' : ''} ${isRefund ? 'is-refund' : ''}`
+  const cls = `island ${leaving ? 'is-leaving' : ''} ${isFail ? 'is-fail' : ''} ${isRefund ? 'is-refund' : ''}`
+
+  const close = () => {
+    setLeaving(true)
+    setTimeout(() => onDismiss(toast.id), 420)
+  }
 
   return (
-    <div className={cls}>
+    <div className={cls} role="status">
       <span className="icon">{toast.icon || '💰'}</span>
       <div className="body">
         <p className="title">{toast.title}</p>
         {toast.amount != null && <p className="amount">{formatMoney(toast.amount)}</p>}
         {toast.sub && <p className="sub">{toast.sub}</p>}
       </div>
-      <button className="close" onClick={() => { setLeaving(true); setTimeout(() => onDismiss(toast.id), 350) }}>✕</button>
+      <button className="close" onClick={close} aria-label="Fermer">✕</button>
     </div>
   )
 }

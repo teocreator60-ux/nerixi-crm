@@ -1,4 +1,5 @@
 'use client'
+import Typewriter from './Typewriter'
 
 const VARIANTS = {
   clients:    { svg: 'people',    title: 'Aucun client encore',           sub: 'Crée ton premier client pour démarrer.' },
@@ -226,7 +227,9 @@ export default function EmptyState({ variant = 'generic', title, subtitle, actio
   return (
     <div className="empty-state fade-in">
       <Svg name={v.svg} />
-      <p style={{ fontSize: 15, fontWeight: 700, color: 'var(--nerixi-text)' }}>{title || v.title}</p>
+      <p style={{ fontSize: 15, fontWeight: 700, color: 'var(--nerixi-text)', minHeight: '1.4em' }}>
+        <Typewriter text={title || v.title} speed={32} startDelay={150} />
+      </p>
       {(subtitle || v.sub) && <p style={{ fontSize: 12.5, maxWidth: 340 }}>{subtitle || v.sub}</p>}
       {action && <div style={{ marginTop: 14 }}>{action}</div>}
     </div>
