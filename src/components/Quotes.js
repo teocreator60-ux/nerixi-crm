@@ -49,12 +49,12 @@ export default function Quotes({ clients = [], prospects = [] }) {
   }
 
   const sendQuote = async (q) => {
-    if (q.status === 'draft' && !confirm(`Envoyer le devis ${q.quoteNumber} à ${q.recipientEmail} ?\n\nCela enverra un email avec un lien public + un Payment Link Stripe.`)) return
+    if (!confirm(`Envoyer le devis ${q.quoteNumber} par email à ${q.recipientEmail} ?\n\n→ Email avec lien public\n→ Stripe Payment Link auto-généré\n→ Tracking des ouvertures activé`)) return
     const res = await fetch(`/api/quotes/${q.id}/send`, { method: 'POST' })
     const data = await res.json()
-    if (data.error) return alert(data.error)
+    if (data.error) return alert(`❌ ${data.error}`)
     reload()
-    alert(`✅ Devis envoyé !\n\nLien public : ${data.publicUrl}`)
+    alert(`✅ Email envoyé à ${q.recipientEmail} !\n\n📄 Lien public : ${data.publicUrl}`)
   }
 
   const removeQuote = async (id) => {

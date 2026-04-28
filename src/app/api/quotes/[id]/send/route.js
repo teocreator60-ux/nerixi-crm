@@ -90,34 +90,51 @@ export async function POST(request, { params }) {
   // Send email with link to public quote page
   const subject = `Votre devis ${quote.quoteNumber} — Nerixi`
   const total = (quote.total || 0).toLocaleString('fr-FR')
+  const upfrontFmt = (upfront || 0).toLocaleString('fr-FR')
   const content = `
     <p>Bonjour ${quote.recipientName || ''},</p>
-    <p>Je vous prie de trouver ci-dessous votre devis personnalisé Nerixi.</p>
-    <p style="background:#f4f4f4;padding:16px;border-radius:8px;border-left:4px solid #00c878;margin:20px 0">
-      <strong>${quote.title}</strong><br>
-      Numéro : ${quote.quoteNumber}<br>
-      Total TTC : <strong>${total} €</strong>
-      ${quote.monthly ? `<br>Abonnement mensuel : ${(quote.monthly).toLocaleString('fr-FR')} €/mois` : ''}
+    <p>Suite à nos échanges, voici votre devis personnalisé <strong>Nerixi</strong>.</p>
+    <div style="background:#f4f4f4;padding:18px;border-radius:8px;border-left:4px solid #00c878;margin:20px 0">
+      <p style="margin:0 0 6px"><strong>${quote.title}</strong></p>
+      <p style="margin:0;font-size:13px;color:#666">Devis n° ${quote.quoteNumber}</p>
+      <p style="margin:8px 0 0;font-size:18px"><strong>Total TTC : ${total} €</strong></p>
+      ${quote.installation ? `<p style="margin:4px 0 0;font-size:13px;color:#666">Acompte à la signature : ${upfrontFmt} €</p>` : ''}
+      ${quote.monthly ? `<p style="margin:4px 0 0;font-size:13px;color:#666">Abonnement mensuel : ${(quote.monthly).toLocaleString('fr-FR')} €/mois</p>` : ''}
+    </div>
+    <p style="text-align:center;margin:28px 0">
+      <a href="${publicUrl}" class="btn" style="display:inline-block;background:#00c878;color:#0a1628;padding:14px 32px;border-radius:8px;text-decoration:none;font-weight:700">📄 Consulter, signer & payer le devis</a>
     </p>
-    <p style="text-align:center;margin:24px 0">
-      <a href="${publicUrl}" class="btn">📄 Consulter et signer le devis</a>
-    </p>
-    <p>Vous pouvez consulter, signer électroniquement et régler le devis directement en ligne en cliquant sur le bouton ci-dessus.</p>
-    ${quote.notes ? `<p style="font-style:italic;color:#666">${quote.notes}</p>` : ''}
-    <p>Belle journée,<br>Téo · Nerixi</p>
+    <p>Vous pouvez consulter le détail, signer électroniquement et régler le devis directement en ligne en cliquant sur le bouton ci-dessus.</p>
+    ${quote.notes ? `<p style="font-style:italic;color:#666;border-top:1px solid #eee;padding-top:12px;margin-top:18px">${quote.notes}</p>` : ''}
+    ${quote.validUntil ? `<p style="font-size:12px;color:#888">⏰ Devis valable jusqu'au ${new Date(quote.validUntil).toLocaleDateString('fr-FR')}</p>` : ''}
+    <p style="margin-top:24px">À très vite,<br><strong>Téo · Nerixi</strong></p>
   `
 
+  let sendError = null
   try {
-    await fetch(`${baseUrl}/api/send-email`, {
+    const sendRes = await fetch(`${baseUrl}/api/send-email`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', cookie: request.headers.get('cookie') || '' },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         to: quote.recipientEmail,
         toName: quote.recipientName || '',
         subject, content, track: true,
       }),
     })
-  } catch {}
+    const sendData = await sendRes.json().catch(() => ({}))
+    if (!sendRes.ok || !sendData.success) {
+      sendError = sendData.error || `Erreur ${sendRes.status}`
+    }
+  } catch (e) {
+    sendError = e.message || 'Erreur réseau Brevo'
+  }
+
+  if (sendError) {
+    return Response.json({
+      error: `Email non envoyé : ${sendError}. Vérifie BREVO_API_KEY dans Vercel.`,
+      quote, publicUrl, paymentLinkUrl,
+    }, { status: 502 })
+  }
 
   quote = await saveQuote({
     ...quote,
@@ -130,5 +147,5 @@ export async function POST(request, { params }) {
     try { await logActivity({ clientId: quote.clientId, type: 'quote_sent', payload: { quoteId: quote.id, quoteNumber: quote.quoteNumber, total: quote.total } }) } catch {}
   }
 
-  return Response.json({ quote, publicUrl })
+  return Response.json({ success: true, quote, publicUrl })
 }
