@@ -1,7 +1,7 @@
 import crypto from 'crypto'
 import { emitEvent } from '@/lib/eventBus'
 import { runWorkflowsForEvent } from '@/lib/workflows'
-import { getClients, logActivity, findPaymentLinkByStripeId, savePaymentLink } from '@/lib/store'
+import { getClients, logActivity, findPaymentLinkByStripeId, savePaymentLink, createClient, updateClient } from '@/lib/store'
 
 export const dynamic = 'force-dynamic'
 export const runtime = 'nodejs'
@@ -28,6 +28,49 @@ async function findClientByEmail(email) {
   return clients.find(c => (c.email || '').toLowerCase().trim() === norm) || null
 }
 
+async function triggerN8nOnboarding(client) {
+  const url = process.env.N8N_ONBOARDING_WEBHOOK_URL
+  if (!url) return { status: 'skipped', error: 'N8N_ONBOARDING_WEBHOOK_URL non configuré' }
+
+  const event = {
+    event: 'client.onboarding_started',
+    timestamp: new Date().toISOString(),
+    source: 'nerixi-crm',
+    triggeredBy: 'stripe_payment',
+    client: {
+      id: client.id,
+      nom: client.nom,
+      entreprise: client.entreprise,
+      secteur: client.secteur,
+      email: client.email,
+      telephone: client.telephone,
+      statut: client.statut,
+      mrr: client.mrr,
+      installation: client.installation,
+      dateDebut: client.dateDebut,
+      automatisations: client.automatisations,
+      prochainAction: client.prochainAction,
+      linkedin: client.linkedin,
+      tags: client.tags,
+      notes: client.notes,
+    },
+  }
+  const body = JSON.stringify(event)
+  const headers = { 'Content-Type': 'application/json', 'User-Agent': 'Nerixi-CRM/1.0' }
+  const secret = process.env.N8N_WEBHOOK_SECRET
+  if (secret) {
+    headers['X-Nerixi-Signature'] = `sha256=${crypto.createHmac('sha256', secret).update(body).digest('hex')}`
+    headers['X-Nerixi-Timestamp'] = event.timestamp
+  }
+  try {
+    const res = await fetch(url, { method: 'POST', headers, body, signal: AbortSignal.timeout(10000) })
+    if (!res.ok) return { status: 'failed', error: `n8n ${res.status}` }
+    return { status: 'sent', triggeredAt: event.timestamp }
+  } catch (e) {
+    return { status: 'failed', error: e.message || 'Erreur réseau' }
+  }
+}
+
 export async function POST(request) {
   const rawBody = await request.text()
   const sig = request.headers.get('stripe-signature')
@@ -45,12 +88,47 @@ export async function POST(request) {
   const obj = event?.data?.object || {}
   const amount = obj.amount_received ?? obj.amount ?? 0
   const email = obj.billing_details?.email || obj.receipt_email || obj.customer_email || null
-  const client = await findClientByEmail(email)
+  let client = await findClientByEmail(email)
 
   let normalizedType = null
   if (event.type === 'charge.succeeded' || event.type === 'payment_intent.succeeded') normalizedType = 'payment.received'
   else if (event.type === 'charge.failed' || event.type === 'payment_intent.payment_failed') normalizedType = 'payment.failed'
   else if (event.type === 'charge.refunded') normalizedType = 'payment.refunded'
+
+  // Auto-onboarding : si paiement reçu d'un email inconnu, créer le client + déclencher n8n
+  let autoOnboarded = false
+  if (normalizedType === 'payment.received' && !client && email) {
+    const customerName = obj.billing_details?.name || obj.customer_details?.name || ''
+    client = await createClient({
+      nom: customerName,
+      entreprise: customerName || email.split('@')[0],
+      email,
+      telephone: obj.billing_details?.phone || obj.customer_details?.phone || '',
+      statut: 'actif',
+      mrr: Math.round(amount / 100),
+      installation: 0,
+      dateDebut: new Date().toISOString().slice(0, 10),
+      avancement: 0,
+      notes: `Client créé automatiquement via paiement Stripe (${obj.id})`,
+      tags: ['stripe-auto'],
+    })
+    autoOnboarded = true
+
+    const onboardingResult = await triggerN8nOnboarding(client)
+    await updateClient(client.id, {
+      ...client,
+      onboarding: {
+        triggeredAt: onboardingResult.triggeredAt || new Date().toISOString(),
+        status: onboardingResult.status,
+        error: onboardingResult.error || null,
+      },
+    })
+    await logActivity({
+      clientId: client.id,
+      type: 'onboarding_triggered',
+      payload: { status: onboardingResult.status, error: onboardingResult.error, triggeredBy: 'stripe_payment' },
+    })
+  }
 
   if (normalizedType) {
     emitEvent({
@@ -68,6 +146,7 @@ export async function POST(request) {
         receipt_url: obj.receipt_url || null,
       },
       client: client ? { id: client.id, nom: client.nom, entreprise: client.entreprise, email: client.email } : null,
+      autoOnboarded,
     })
 
     if (client) {

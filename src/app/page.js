@@ -11,7 +11,6 @@ import { AtRiskPanel, HealthGauge, ClientHealthCard } from '@/components/HealthS
 import ClientTimeline from '@/components/ClientTimeline'
 import { RealtimeToastStack } from '@/components/RealtimeToast'
 import CountUp from '@/components/CountUp'
-import WorkflowBuilder from '@/components/WorkflowBuilder'
 import YearRecap from '@/components/YearRecap'
 import { fireConfettiFromElement, playChaching, isSoundEnabled, setSoundEnabled, fireGoldRain, fireStarBurst, fireFireworks, fireCheckmark } from '@/lib/effects'
 import AmbientBackground from '@/components/AmbientBackground'
@@ -44,7 +43,6 @@ const TABS = [
   { id: 'Agenda',      icon: '📅' },
   { id: 'Suivi',       icon: '💰', label: 'Suivi paiements' },
   { id: 'Stripe',      icon: '💳', label: 'Stripe' },
-  { id: 'Workflows',   icon: '🤖', label: 'Automatisations' },
   { id: 'Chat',        icon: '💬' },
   { id: 'Emails',      icon: '📧' },
   { id: 'LinkedIn',    icon: '💼' },
@@ -1283,9 +1281,6 @@ export default function Home() {
             )}
           </div>
         )}
-
-        {/* WORKFLOWS */}
-        {activeTab === 'Workflows' && <WorkflowBuilder />}
 
         {/* PIPELINE (prospects + clients) */}
         {activeTab === 'Pipeline' && (
