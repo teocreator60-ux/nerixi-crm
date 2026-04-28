@@ -580,19 +580,62 @@ export async function saveInboundEmail(input) {
 export async function saveOutboundEmail(input) {
   const list = await readCol('outboundEmails')
   const id = `out_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`
+  const trackingId = input.trackingId || `trk_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`
   const email = {
     id,
+    trackingId,
     clientId: input.clientId != null ? Number(input.clientId) : null,
     toEmail:  input.toEmail || '',
     toName:   input.toName || '',
     subject:  input.subject || '',
     content:  input.content || '',
     sentAt:   input.sentAt || new Date().toISOString(),
+    opens: 0, openedAt: null, lastOpenAt: null,
+    clicks: 0, clickedAt: null, lastClickAt: null, clickedUrls: [],
+    sequenceId: input.sequenceId || null,
+    enrollmentId: input.enrollmentId || null,
+    repliedAt: null,
   }
   list.unshift(email)
-  const trimmed = list.length > 1000 ? list.slice(0, 1000) : list
+  const trimmed = list.length > 2000 ? list.slice(0, 2000) : list
   await writeCol('outboundEmails', trimmed)
   return email
+}
+export async function trackEmailOpen(trackingId) {
+  const list = await readCol('outboundEmails')
+  const idx = list.findIndex(m => m.trackingId === trackingId)
+  if (idx === -1) return null
+  const cur = list[idx]
+  const now = new Date().toISOString()
+  list[idx] = { ...cur, opens: (cur.opens || 0) + 1, openedAt: cur.openedAt || now, lastOpenAt: now }
+  await writeCol('outboundEmails', list)
+  return list[idx]
+}
+export async function trackEmailClick(trackingId, url) {
+  const list = await readCol('outboundEmails')
+  const idx = list.findIndex(m => m.trackingId === trackingId)
+  if (idx === -1) return null
+  const cur = list[idx]
+  const now = new Date().toISOString()
+  const clickedUrls = Array.isArray(cur.clickedUrls) ? [...cur.clickedUrls, { url, ts: now }] : [{ url, ts: now }]
+  list[idx] = { ...cur, clicks: (cur.clicks || 0) + 1, clickedAt: cur.clickedAt || now, lastClickAt: now, clickedUrls: clickedUrls.slice(-50) }
+  await writeCol('outboundEmails', list)
+  return list[idx]
+}
+export async function markOutboundReplied(toEmail) {
+  if (!toEmail) return 0
+  const list = await readCol('outboundEmails')
+  const norm = toEmail.toLowerCase().trim()
+  const now = new Date().toISOString()
+  let updated = 0
+  for (const m of list) {
+    if (!m.repliedAt && (m.toEmail || '').toLowerCase().trim() === norm) {
+      m.repliedAt = now
+      updated++
+    }
+  }
+  if (updated > 0) await writeCol('outboundEmails', list)
+  return updated
 }
 export async function markEmailRead(id, read = true) {
   const list = await readCol('inboundEmails')
@@ -620,4 +663,166 @@ export async function findClientByEmail(email) {
   const norm = email.toLowerCase().trim()
   const list = await readCol('clients')
   return list.find(c => (c.email || '').toLowerCase().trim() === norm) || null
+}
+
+// ───────── Email sequences ─────────
+export async function getSequences() { return await readCol('sequences') }
+export async function saveSequence(input) {
+  const list = await readCol('sequences')
+  const isNew = !input.id
+  const id = input.id || `seq_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`
+  const seq = {
+    id,
+    name: input.name || 'Nouvelle séquence',
+    description: input.description || '',
+    steps: Array.isArray(input.steps) ? input.steps.map((s, i) => ({
+      dayOffset: Number(s.dayOffset) || 0,
+      subject: s.subject || '',
+      content: s.content || '',
+      order: i,
+    })) : [],
+    createdAt: input.createdAt || new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  }
+  if (isNew) list.unshift(seq)
+  else {
+    const idx = list.findIndex(s => s.id === id)
+    if (idx === -1) list.unshift(seq); else list[idx] = seq
+  }
+  await writeCol('sequences', list)
+  return seq
+}
+export async function deleteSequence(id) {
+  const list = await readCol('sequences')
+  await writeCol('sequences', list.filter(s => s.id !== id))
+  // Cancel any active enrollments
+  const enrolls = await readCol('enrollments')
+  await writeCol('enrollments', enrolls.filter(e => e.sequenceId !== id))
+  return true
+}
+
+export async function getEnrollments({ sequenceId, email, status } = {}) {
+  let list = await readCol('enrollments')
+  if (sequenceId) list = list.filter(e => e.sequenceId === sequenceId)
+  if (email) list = list.filter(e => (e.recipientEmail || '').toLowerCase() === email.toLowerCase())
+  if (status) list = list.filter(e => e.status === status)
+  return list
+}
+export async function saveEnrollment(input) {
+  const list = await readCol('enrollments')
+  const isNew = !input.id
+  const id = input.id || `enr_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`
+  const enr = {
+    id,
+    sequenceId: input.sequenceId,
+    recipientEmail: (input.recipientEmail || '').toLowerCase().trim(),
+    recipientName: input.recipientName || '',
+    clientId: input.clientId != null ? Number(input.clientId) : null,
+    prospectId: input.prospectId != null ? Number(input.prospectId) : null,
+    currentStep: Number(input.currentStep) || 0,
+    nextSendAt: input.nextSendAt || new Date().toISOString(),
+    status: input.status || 'active',
+    startedAt: input.startedAt || new Date().toISOString(),
+    pausedAt: input.pausedAt || null,
+    completedAt: input.completedAt || null,
+    history: Array.isArray(input.history) ? input.history : [],
+  }
+  if (isNew) list.unshift(enr)
+  else {
+    const idx = list.findIndex(e => e.id === id)
+    if (idx === -1) list.unshift(enr); else list[idx] = enr
+  }
+  await writeCol('enrollments', list)
+  return enr
+}
+export async function pauseEnrollmentsByEmail(email, reason = 'replied') {
+  if (!email) return 0
+  const norm = email.toLowerCase().trim()
+  const list = await readCol('enrollments')
+  let count = 0
+  for (const e of list) {
+    if (e.status === 'active' && (e.recipientEmail || '').toLowerCase() === norm) {
+      e.status = 'paused'
+      e.pausedAt = new Date().toISOString()
+      e.pauseReason = reason
+      count++
+    }
+  }
+  if (count > 0) await writeCol('enrollments', list)
+  return count
+}
+export async function deleteEnrollment(id) {
+  const list = await readCol('enrollments')
+  await writeCol('enrollments', list.filter(e => e.id !== id))
+  return true
+}
+
+// ───────── Quotes (Devis) ─────────
+export async function getQuotes({ clientId, prospectId } = {}) {
+  let list = await readCol('quotes')
+  if (clientId != null) list = list.filter(q => q.clientId === Number(clientId))
+  if (prospectId != null) list = list.filter(q => q.prospectId === Number(prospectId))
+  return list
+}
+export async function getQuote(id) {
+  const list = await readCol('quotes')
+  return list.find(q => q.id === id)
+}
+export async function getQuoteByToken(token) {
+  if (!token) return null
+  const list = await readCol('quotes')
+  return list.find(q => q.token === token)
+}
+export async function saveQuote(input) {
+  const list = await readCol('quotes')
+  const isNew = !input.id
+  const id = input.id || `quote_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`
+  const token = input.token || `qtk_${Math.random().toString(36).slice(2, 8)}${Math.random().toString(36).slice(2, 8)}`
+  const items = Array.isArray(input.items) ? input.items.map(it => ({
+    label: it.label || '',
+    description: it.description || '',
+    quantity: Number(it.quantity) || 1,
+    unitPrice: Number(it.unitPrice) || 0,
+  })) : []
+  const subtotal = items.reduce((s, it) => s + (it.quantity * it.unitPrice), 0)
+  const tva = input.tvaRate != null ? Number(input.tvaRate) : 20
+  const total = Math.round(subtotal * (1 + tva / 100))
+  const installation = Number(input.installation) || 0
+  const monthly = Number(input.monthly) || 0
+  const quote = {
+    id, token,
+    quoteNumber: input.quoteNumber || `Q-${new Date().getFullYear()}-${String((list.length + 1)).padStart(4, '0')}`,
+    clientId: input.clientId != null ? Number(input.clientId) : null,
+    prospectId: input.prospectId != null ? Number(input.prospectId) : null,
+    recipientName: input.recipientName || '',
+    recipientEmail: input.recipientEmail || '',
+    company: input.company || '',
+    title: input.title || 'Devis Nerixi',
+    items, subtotal, tvaRate: tva, total, installation, monthly,
+    notes: input.notes || '',
+    validUntil: input.validUntil || null,
+    status: input.status || 'draft',
+    sentAt: input.sentAt || null,
+    viewedAt: input.viewedAt || null,
+    signedAt: input.signedAt || null,
+    paidAt: input.paidAt || null,
+    signature: input.signature || null,
+    signedBy: input.signedBy || null,
+    paymentLinkId: input.paymentLinkId || null,
+    paymentLinkUrl: input.paymentLinkUrl || null,
+    createdAt: input.createdAt || new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  }
+  if (isNew) list.unshift(quote)
+  else {
+    const idx = list.findIndex(q => q.id === id)
+    if (idx === -1) list.unshift(quote); else list[idx] = quote
+  }
+  await writeCol('quotes', list)
+  return quote
+}
+export async function deleteQuote(id) {
+  const list = await readCol('quotes')
+  await writeCol('quotes', list.filter(q => q.id !== id))
+  return true
 }

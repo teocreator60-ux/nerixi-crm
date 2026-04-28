@@ -118,29 +118,70 @@ export function MRRForecastChart({ clients }) {
           </g>
         ))}
 
-        {hover !== null && (
-          <g>
-            <line x1={x(hover)} x2={x(hover)} y1={PAD_T} y2={PAD_T + innerH} stroke="rgba(0,200,120,0.4)" strokeDasharray="3 3" />
-            <g transform={`translate(${Math.min(W - 130, Math.max(PAD_L, x(hover) - 60))}, ${Math.max(PAD_T, y(all[hover].mrr) - 56)})`}>
-              <rect x="0" y="0" width="120" height="48" rx="8" fill="#142340" stroke="rgba(0,200,120,0.4)" />
-              <text x="10" y="16" fill="#7a9bb0" fontSize="10">
-                {all[hover].date.toLocaleDateString('fr-FR', { month: 'short', year: 'numeric' })}
-                {all[hover].isProjection && ' · projection'}
-              </text>
-              <text x="10" y="32" fill="#00e89a" fontSize="13" fontWeight="700">{formatMoney(all[hover].mrr)}</text>
-              {all[hover].isProjection && (
-                <text x="10" y="44" fill="#7a9bb0" fontSize="9">
-                  ±{formatMoney(all[hover].upper - all[hover].mrr)}
+        {hover !== null && (() => {
+          const point = all[hover]
+          const top3 = (point.contributors || []).slice(0, 3)
+          const tipW = 180
+          const tipH = 30 + (top3.length * 14) + (point.isProjection ? 14 : 0)
+          return (
+            <g>
+              <line x1={x(hover)} x2={x(hover)} y1={PAD_T} y2={PAD_T + innerH} stroke="rgba(0,200,120,0.4)" strokeDasharray="3 3" />
+              <g transform={`translate(${Math.min(W - tipW - 10, Math.max(PAD_L, x(hover) - tipW / 2))}, ${Math.max(PAD_T, y(point.mrr) - tipH - 10)})`}>
+                <rect x="0" y="0" width={tipW} height={tipH} rx="8" fill="#142340" stroke="rgba(0,200,120,0.4)" />
+                <text x="10" y="14" fill="#7a9bb0" fontSize="10">
+                  {point.date.toLocaleDateString('fr-FR', { month: 'short', year: 'numeric' })}
+                  {point.isProjection && ' · projection'}
                 </text>
-              )}
+                <text x="10" y="28" fill="#00e89a" fontSize="13" fontWeight="700">{formatMoney(point.mrr)}</text>
+                {top3.map((c, i) => (
+                  <text key={c.id} x="10" y={42 + i * 14} fill="#cfe9da" fontSize="10">
+                    {c.entreprise.length > 20 ? c.entreprise.slice(0, 18) + '…' : c.entreprise} · {formatMoney(c.mrr)}
+                  </text>
+                ))}
+                {point.isProjection && (
+                  <text x="10" y={42 + (top3.length * 14)} fill="#7a9bb0" fontSize="9">
+                    ±{formatMoney(point.upper - point.mrr)}
+                  </text>
+                )}
+              </g>
             </g>
-          </g>
-        )}
+          )
+        })()}
       </svg>
 
       <p style={{ fontSize: 10.5, color: 'var(--nerixi-muted)', textAlign: 'center', marginTop: 8 }}>
         Ligne pleine = historique réel · Ligne pointillée = projection · Zone verte claire = intervalle de confiance
       </p>
+
+      {last?.contributors?.length > 0 && (
+        <div style={{ marginTop: 16, paddingTop: 14, borderTop: '1px solid rgba(0,200,120,0.15)' }}>
+          <p style={{ fontSize: 11, color: 'var(--nerixi-muted)', textTransform: 'uppercase', letterSpacing: 0.6, fontWeight: 700, marginBottom: 10 }}>
+            🏆 Top entreprises qui génèrent ton MRR ({last.date.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' })})
+          </p>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 220px), 1fr))', gap: 8 }}>
+            {last.contributors.slice(0, 12).map((c, i) => {
+              const pct = (c.mrr / last.mrr) * 100
+              return (
+                <div key={c.id} style={{ padding: '8px 12px', background: 'rgba(0,200,120,0.06)', border: '1px solid rgba(0,200,120,0.18)', borderRadius: 8, display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <span style={{ fontSize: 12, fontWeight: 800, color: '#00e89a', minWidth: 18 }}>{i + 1}</span>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <p style={{ fontSize: 12.5, fontWeight: 600, color: 'var(--nerixi-text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.entreprise}</p>
+                    <div style={{ height: 3, background: 'rgba(0,200,120,0.15)', borderRadius: 999, marginTop: 4, overflow: 'hidden' }}>
+                      <div style={{ height: '100%', width: `${Math.min(100, pct)}%`, background: 'linear-gradient(90deg, #00c878, #36e6c4)' }} />
+                    </div>
+                  </div>
+                  <span style={{ fontSize: 12, fontWeight: 700, color: '#00e89a' }}>{formatMoney(c.mrr)}</span>
+                </div>
+              )
+            })}
+          </div>
+          {last.contributors.length > 12 && (
+            <p style={{ fontSize: 11, color: 'var(--nerixi-muted)', textAlign: 'center', marginTop: 8 }}>
+              +{last.contributors.length - 12} autres clients
+            </p>
+          )}
+        </div>
+      )}
     </div>
   )
 }

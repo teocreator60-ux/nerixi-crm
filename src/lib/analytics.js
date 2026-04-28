@@ -9,10 +9,19 @@ export function buildMRRSeries(clients, months = 12) {
   const series = []
   for (let i = months - 1; i >= 0; i--) {
     const d = new Date(today.getFullYear(), today.getMonth() - i, 1)
-    const mrr = clients
-      .filter(c => c.dateDebut && new Date(c.dateDebut) <= d && c.statut !== 'churné')
-      .reduce((sum, c) => sum + (Number(c.mrr) || 0), 0)
-    series.push({ date: d, mrr, isProjection: false })
+    const monthEnd = new Date(d.getFullYear(), d.getMonth() + 1, 0)
+    const active = clients.filter(c => {
+      if (!c.dateDebut) return false
+      if (new Date(c.dateDebut) > monthEnd) return false
+      if (c.statut === 'churné' && c.dateChurn && new Date(c.dateChurn) <= d) return false
+      return c.statut !== 'churné' || !c.dateChurn
+    })
+    const contributors = active
+      .map(c => ({ id: c.id, entreprise: c.entreprise, mrr: Number(c.mrr) || 0 }))
+      .filter(c => c.mrr > 0)
+      .sort((a, b) => b.mrr - a.mrr)
+    const mrr = contributors.reduce((sum, c) => sum + c.mrr, 0)
+    series.push({ date: d, mrr, contributors, isProjection: false })
   }
   return series
 }

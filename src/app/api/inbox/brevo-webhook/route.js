@@ -1,4 +1,4 @@
-import { saveInboundEmail, findClientByEmail, logActivity } from '@/lib/store'
+import { saveInboundEmail, findClientByEmail, logActivity, pauseEnrollmentsByEmail, markOutboundReplied } from '@/lib/store'
 import { emitEvent } from '@/lib/eventBus'
 
 export const dynamic = 'force-dynamic'
@@ -70,6 +70,10 @@ export async function POST(request) {
         payload: { subject, from: fromEmail, emailId: email.id },
       })
     }
+
+    // Auto-pause séquences + marquer outbound comme reply
+    try { await pauseEnrollmentsByEmail(fromEmail, 'replied') } catch {}
+    try { await markOutboundReplied(fromEmail) } catch {}
 
     emitEvent({
       type: 'inbox.email_received',

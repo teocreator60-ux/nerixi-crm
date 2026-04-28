@@ -32,6 +32,8 @@ import Pipeline from '@/components/Pipeline'
 import Inbox from '@/components/Inbox'
 import PaymentLinkButton from '@/components/PaymentLink'
 import VisitorPanel from '@/components/VisitorPanel'
+import Sequences from '@/components/Sequences'
+import Quotes from '@/components/Quotes'
 import CursorLight from '@/components/CursorLight'
 import { useGlobalRipple, useRevealOnScroll, useTilt3D } from '@/lib/interactions'
 
@@ -45,6 +47,8 @@ const TABS = [
   { id: 'Stripe',      icon: '💳', label: 'Stripe' },
   { id: 'Chat',        icon: '💬' },
   { id: 'Emails',      icon: '📧' },
+  { id: 'Sequences',   icon: '⏱',  label: 'Séquences' },
+  { id: 'Devis',       icon: '📄' },
   { id: 'LinkedIn',    icon: '💼' },
 ]
 
@@ -1505,6 +1509,20 @@ export default function Home() {
                 onDeleted={handleListDeleted}
               />
             )}
+          </div>
+        )}
+
+        {/* SEQUENCES */}
+        {activeTab === 'Sequences' && (
+          <div className="fade-in">
+            <Sequences clients={clients} />
+          </div>
+        )}
+
+        {/* DEVIS */}
+        {activeTab === 'Devis' && (
+          <div className="fade-in">
+            <Quotes clients={clients} prospects={prospects} />
           </div>
         )}
 

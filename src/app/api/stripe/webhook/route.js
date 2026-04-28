@@ -1,7 +1,7 @@
 import crypto from 'crypto'
 import { emitEvent } from '@/lib/eventBus'
 import { runWorkflowsForEvent } from '@/lib/workflows'
-import { getClients, logActivity, findPaymentLinkByStripeId, savePaymentLink, createClient, updateClient } from '@/lib/store'
+import { getClients, logActivity, findPaymentLinkByStripeId, savePaymentLink, createClient, updateClient, getQuote, saveQuote } from '@/lib/store'
 
 export const dynamic = 'force-dynamic'
 export const runtime = 'nodejs'
@@ -163,6 +163,22 @@ export async function POST(request) {
       const existing = await findPaymentLinkByStripeId(linkStripeId)
       if (existing) {
         await savePaymentLink({ ...existing, status: 'paid', paidAt: new Date().toISOString() })
+      }
+    }
+
+    // Mark matching quote as paid (via metadata.quoteId)
+    const quoteId = obj.metadata?.quoteId
+    if (quoteId && normalizedType === 'payment.received') {
+      const quote = await getQuote(quoteId)
+      if (quote && !quote.paidAt) {
+        await saveQuote({ ...quote, status: 'paid', paidAt: new Date().toISOString() })
+        if (quote.clientId) {
+          await logActivity({
+            clientId: quote.clientId,
+            type: 'quote_paid',
+            payload: { quoteId, quoteNumber: quote.quoteNumber, amount: quote.total },
+          })
+        }
       }
     }
 
