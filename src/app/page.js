@@ -833,7 +833,7 @@ export default function Home() {
 
   // Animations globales
   useGlobalRipple()
-  useRevealOnScroll([activeTab, clients.length])
+  useRevealOnScroll([activeTab, clients.length, loadingData])
 
   const pushToast = (toast) => {
     const id = `t_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`

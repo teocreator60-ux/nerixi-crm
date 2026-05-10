@@ -69,17 +69,49 @@ export function useTilt3D({ max = 6, scale = 1.02, perspective = 800 } = {}) {
 export function useRevealOnScroll(deps = []) {
   useEffect(() => {
     if (typeof window === 'undefined') return
-    const obs = new IntersectionObserver((entries) => {
-      entries.forEach(e => {
-        if (e.isIntersecting) {
-          e.target.classList.add('is-visible')
-          obs.unobserve(e.target)
-        }
-      })
-    }, { threshold: 0.08, rootMargin: '0px 0px -8% 0px' })
-    const els = document.querySelectorAll('.reveal:not(.is-visible)')
-    els.forEach(el => obs.observe(el))
-    return () => obs.disconnect()
+    let cancelled = false
+    let obs = null
+
+    const setup = () => {
+      if (cancelled) return
+      // Fallback : si IntersectionObserver indispo, tout devient visible
+      if (!('IntersectionObserver' in window)) {
+        document.querySelectorAll('.reveal').forEach(el => el.classList.add('is-visible'))
+        return
+      }
+      obs = new IntersectionObserver((entries) => {
+        entries.forEach(e => {
+          if (e.isIntersecting) {
+            e.target.classList.add('is-visible')
+            obs.unobserve(e.target)
+          }
+        })
+      }, { threshold: 0.05, rootMargin: '0px 0px 0px 0px' })
+
+      const els = document.querySelectorAll('.reveal:not(.is-visible)')
+      els.forEach(el => obs.observe(el))
+
+      // Fallback de sécurité : après 1s, on rend visible tout ce qui est encore caché
+      // (couvre le cas où l'observer n'a pas eu le temps de fire correctement)
+      setTimeout(() => {
+        if (cancelled) return
+        document.querySelectorAll('.reveal:not(.is-visible)').forEach(el => {
+          const rect = el.getBoundingClientRect()
+          // Si l'élément est dans ou au-dessus de la viewport, on le révèle
+          if (rect.top < window.innerHeight + 100) {
+            el.classList.add('is-visible')
+          }
+        })
+      }, 800)
+    }
+
+    // Attendre que le DOM soit complètement layouté (2 frames pour être sûr)
+    requestAnimationFrame(() => requestAnimationFrame(setup))
+
+    return () => {
+      cancelled = true
+      if (obs) obs.disconnect()
+    }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, deps)
 }
