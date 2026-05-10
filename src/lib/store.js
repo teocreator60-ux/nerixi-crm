@@ -69,7 +69,26 @@ function defaultEvents(clients) {
 }
 
 // ───────── KV helpers ─────────
-async function readCol(name) { await ensureSeeded(); return (await kv.get(P + name)) || [] }
+async function readCol(name) {
+  await ensureSeeded()
+  const raw = await kv.get(P + name)
+  // Protection contre les données mal formées (par exemple écrasées par un agent IA externe)
+  if (!Array.isArray(raw)) {
+    if (raw == null) return []
+    // Tente de récupérer un tableau dans la structure
+    const candidate = (raw && typeof raw === 'object' && (raw.value || raw.items || raw.data)) || raw
+    let recovered = []
+    if (Array.isArray(candidate)) recovered = candidate
+    else if (typeof candidate === 'string') {
+      try { const p = JSON.parse(candidate); if (Array.isArray(p)) recovered = p } catch {}
+    }
+    // Garde seulement les vrais objets (pas les strings/null/array imbriqués)
+    recovered = recovered.filter(item => item && typeof item === 'object' && !Array.isArray(item))
+    try { await kv.set(P + name, recovered) } catch {}
+    return recovered
+  }
+  return raw
+}
 async function writeCol(name, data) { await kv.set(P + name, data) }
 async function readScalar(name) { await ensureSeeded(); return await kv.get(P + name) }
 async function writeScalar(name, val) { await kv.set(P + name, val) }
