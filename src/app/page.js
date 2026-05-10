@@ -1061,6 +1061,15 @@ export default function Home() {
       <button className="mobile-toggle" onClick={() => setSidebarOpen(s => !s)} aria-label="Menu">
         {sidebarOpen ? '✕' : '☰'}
       </button>
+      <button
+        className="mobile-logout"
+        onClick={async () => {
+          if (!confirm('Se déconnecter ?')) return
+          await logout()
+        }}
+        aria-label="Déconnexion"
+        title="Déconnexion"
+      >↪</button>
 
       {sidebarOpen && <div className="sidebar-backdrop" onClick={() => setSidebarOpen(false)} />}
 
