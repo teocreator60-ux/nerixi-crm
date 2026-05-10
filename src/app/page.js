@@ -3,6 +3,7 @@ import { useState, useEffect, useMemo } from 'react'
 import Login, { useAuth } from '@/components/Login'
 import Calendar from '@/components/Calendar'
 import { MRRChart, ClientGrowthChart, StatusBreakdown, MRRForecastChart, CohortHeatmap, LTVCard } from '@/components/Charts'
+import AdvancedStats from '@/components/AdvancedStats'
 import ClientForm from '@/components/ClientForm'
 import PaymentTracking from '@/components/PaymentTracking'
 import CommandPalette from '@/components/CommandPalette'
@@ -35,6 +36,10 @@ import VisitorPanel from '@/components/VisitorPanel'
 import Sequences from '@/components/Sequences'
 import Quotes from '@/components/Quotes'
 import CursorLight from '@/components/CursorLight'
+import SignatureBuilder from '@/components/SignatureBuilder'
+import QuickCapture from '@/components/QuickCapture'
+import Competitors from '@/components/Competitors'
+import AuditLogViewer from '@/components/AuditLogViewer'
 import { useGlobalRipple, useRevealOnScroll, useTilt3D } from '@/lib/interactions'
 
 const TABS = [
@@ -50,6 +55,8 @@ const TABS = [
   { id: 'Sequences',   icon: '⏱',  label: 'Séquences' },
   { id: 'Devis',       icon: '📄' },
   { id: 'LinkedIn',    icon: '💼' },
+  { id: 'Concurrents', icon: '🎯' },
+  { id: 'Audit',       icon: '📜' },
 ]
 
 const LINKEDIN_TEMPLATES = [
@@ -702,6 +709,7 @@ export default function Home() {
   const [stripePayments, setStripePayments] = useState([])
   const [stripeMode, setStripeMode] = useState('demo')
   const [loadingData, setLoadingData] = useState(true)
+  const [config, setConfigState] = useState({})
 
   const stats = useMemo(() => ({
     mrr_total: clients.filter(c => c.statut === 'actif' || c.statut === 'en-cours').reduce((s, c) => s + (Number(c.mrr) || 0), 0),
@@ -712,7 +720,7 @@ export default function Home() {
 
   const refreshData = async () => {
     try {
-      const [cRes, eRes, sRes, tRes, tplRes, lRes, liRes, prRes] = await Promise.all([
+      const [cRes, eRes, sRes, tRes, tplRes, lRes, liRes, prRes, cfgRes] = await Promise.all([
         apiFetch('/api/clients',         { cache: 'no-store' }),
         apiFetch('/api/events',          { cache: 'no-store' }),
         apiFetch('/api/stripe/payments', { cache: 'no-store' }),
@@ -721,6 +729,7 @@ export default function Home() {
         apiFetch('/api/lists',           { cache: 'no-store' }),
         apiFetch('/api/linkedin/posts',  { cache: 'no-store' }),
         apiFetch('/api/prospects',       { cache: 'no-store' }),
+        apiFetch('/api/config',          { cache: 'no-store' }),
       ])
       const c = await cRes.json()
       const e = await eRes.json()
@@ -739,6 +748,7 @@ export default function Home() {
       setLists(ll.lists || [])
       setLinkedinPosts(li.posts || [])
       setProspects(pr.prospects || [])
+      try { const cfg = await cfgRes.json(); setConfigState(cfg.config || {}) } catch {}
     } catch (e) {}
     setLoadingData(false)
   }
@@ -1058,6 +1068,7 @@ export default function Home() {
   return (
     <div style={{ display: 'flex', minHeight: '100vh' }} className="fade-in">
       <CursorLight />
+      <QuickCapture onCaptured={() => refreshData()} />
       <button className="mobile-toggle" onClick={() => setSidebarOpen(s => !s)} aria-label="Menu">
         {sidebarOpen ? '✕' : '☰'}
       </button>
@@ -1227,6 +1238,15 @@ export default function Home() {
               />
               <StatCard label="Trésorerie"    value={<CountUp value={stats.installation_total} format={v => `${Math.round(v).toLocaleString('fr-FR')}€`} />} sub="Total installations signées" icon="🏦" />
               <StatCard label="Clients actifs" value={<CountUp value={stats.clients_actifs} />}                                                                   sub={`+ ${stats.clients_en_cours} en cours`} icon="🚀" />
+            </div>
+
+            <div className="reveal" style={{ marginBottom: 22 }}>
+              <AdvancedStats
+                clients={clients}
+                prospects={prospects}
+                config={config}
+                onConfigChange={(newCfg) => setConfigState(newCfg)}
+              />
             </div>
 
             <div className="reveal" style={{ marginBottom: 22 }}>
@@ -1422,6 +1442,7 @@ export default function Home() {
                 { id: 'html',      label: '🎨 Templates HTML' },
                 { id: 'lists',     label: '📋 Listes' },
                 { id: 'templates', label: 'Templates rapides' },
+                { id: 'signature', label: '✍️ Signature' },
               ].map(t => (
                 <button key={t.id} onClick={() => setEmailTab(t.id)}
                   style={{
@@ -1509,6 +1530,10 @@ export default function Home() {
                 lists={lists}
                 emailTemplates={emailTemplates}
               />
+            )}
+
+            {emailTab === 'signature' && (
+              <SignatureBuilder initial={config.signature} />
             )}
 
             {emailTab === 'lists' && (
@@ -1607,6 +1632,21 @@ export default function Home() {
             </div>
           </div>
         )}
+
+        {/* CONCURRENTS */}
+        {activeTab === 'Concurrents' && (
+          <div className="fade-in">
+            <Competitors myMRR={stats.mrr_total} />
+          </div>
+        )}
+
+        {/* AUDIT LOG */}
+        {activeTab === 'Audit' && (
+          <div className="fade-in">
+            <AuditLogViewer />
+          </div>
+        )}
+
         </div>
       </main>
 

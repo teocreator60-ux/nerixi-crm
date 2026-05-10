@@ -19,10 +19,23 @@ function emptyProspect(stage = 'froid') {
   return { nom: '', entreprise: '', email: '', telephone: '', linkedin: '', secteur: '', role: '', source: 'cold', stage, estimatedMRR: 0, nextAction: '', notes: '' }
 }
 
+const COMMON_LOSS_REASONS = [
+  'Trop cher',
+  'Pas le bon timing',
+  'A choisi un concurrent',
+  'Pas de budget',
+  'Pas de besoin réel',
+  'Pas de réponse / ghosting',
+  'Décideur indisponible',
+  'Solution interne',
+  'Autre',
+]
+
 export default function Pipeline({ prospects, onProspectsChange, onConvertToClient }) {
   const [editing, setEditing]   = useState(null)
   const [overCol, setOverCol]   = useState(null)
   const [transition, setTransition] = useState(null)
+  const [lossModal, setLossModal] = useState(null) // { prospectId, reasonChoice, customReason }
 
   const byStage = useMemo(() => {
     const m = {}
@@ -101,9 +114,13 @@ export default function Pipeline({ prospects, onProspectsChange, onConvertToClie
     onProspectsChange(prev => prev.map(x => x.id === id ? { ...x, stage: sId } : x))
     setTransition({ from: fromStage, to: toStage, entreprise: p.entreprise })
     setTimeout(() => setTransition(null), 2400)
+    // Si on déplace vers "refuse", demande la raison
+    if (sId === 'refuse' && !p.lossReason) {
+      setLossModal({ prospectId: id, reasonChoice: '', customReason: '' })
+    }
     const res = await fetch(`/api/prospects/${id}`, {
       method: 'PUT', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ...p, stage: sId }),
+      body: JSON.stringify({ ...p, stage: sId, lost: sId === 'refuse' ? true : false }),
     })
     const data = await res.json()
     if (!data.prospect) {
@@ -204,6 +221,63 @@ export default function Pipeline({ prospects, onProspectsChange, onConvertToClie
           onDelete={editing.id ? () => remove(editing.id) : null}
           onConvert={editing.id ? () => convert(editing) : null}
         />
+      )}
+
+      {lossModal && (
+        <Modal onClose={() => setLossModal(null)} zIndex={210} contentStyle={{ maxWidth: 480 }}>
+          <button onClick={() => setLossModal(null)} className="modal-close">✕</button>
+          <p style={{ fontSize: 17, fontWeight: 800, marginBottom: 6 }}>❌ Pourquoi ce prospect est perdu ?</p>
+          <p style={{ fontSize: 12.5, color: 'var(--nerixi-muted)', marginBottom: 16 }}>
+            Ces données alimentent ton Win/Loss analysis sur le dashboard.
+          </p>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 8, marginBottom: 14 }}>
+            {COMMON_LOSS_REASONS.map(r => (
+              <button key={r}
+                onClick={() => setLossModal({ ...lossModal, reasonChoice: r, customReason: r === 'Autre' ? lossModal.customReason : '' })}
+                style={{
+                  padding: '10px 12px', fontSize: 12.5, textAlign: 'left',
+                  background: lossModal.reasonChoice === r ? 'rgba(255,138,137,0.15)' : 'rgba(10,22,40,0.6)',
+                  border: `1px solid ${lossModal.reasonChoice === r ? '#ff8a89' : 'var(--nerixi-border)'}`,
+                  color: lossModal.reasonChoice === r ? '#ff8a89' : 'var(--nerixi-text)',
+                  borderRadius: 10, cursor: 'pointer', fontWeight: 600,
+                }}>
+                {r}
+              </button>
+            ))}
+          </div>
+          {lossModal.reasonChoice === 'Autre' && (
+            <input
+              autoFocus
+              placeholder="Précise la raison…"
+              value={lossModal.customReason}
+              onChange={e => setLossModal({ ...lossModal, customReason: e.target.value })}
+              style={{ marginBottom: 14 }}
+            />
+          )}
+          <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+            <button onClick={() => setLossModal(null)} className="btn-secondary">Plus tard</button>
+            <button
+              onClick={async () => {
+                const reason = lossModal.reasonChoice === 'Autre' ? lossModal.customReason.trim() : lossModal.reasonChoice
+                if (!reason) return
+                const p = prospects.find(x => x.id === lossModal.prospectId)
+                if (!p) { setLossModal(null); return }
+                const updated = { ...p, lost: true, lossReason: reason, lostAt: new Date().toISOString() }
+                onProspectsChange(prev => prev.map(x => x.id === p.id ? updated : x))
+                setLossModal(null)
+                try {
+                  await fetch(`/api/prospects/${p.id}`, {
+                    method: 'PUT', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(updated),
+                  })
+                } catch {}
+              }}
+              disabled={!lossModal.reasonChoice || (lossModal.reasonChoice === 'Autre' && !lossModal.customReason.trim())}
+              className="btn-primary">
+              Enregistrer
+            </button>
+          </div>
+        </Modal>
       )}
     </div>
   )

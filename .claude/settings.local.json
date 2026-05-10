@@ -5,7 +5,25 @@
       "Bash(npx --no-install next build)",
       "Bash(npm install *)",
       "Bash(node -e ' *)",
-      "Bash(npx next *)"
+      "Bash(npx next *)",
+      "Bash(npm run *)",
+      "Read(//tmp/**)",
+      "Bash(pkill -f \"next dev\")",
+      "Bash(wait)",
+      "Bash(npm run dev 2>&1 > /tmp/dev.log & *)",
+      "Bash(git add *)",
+      "Bash(git commit -m 'Bulletproof Dashboard: null-safety on charts + push settings fetch errors' -m '- MRRForecastChart: guard last.date and contributors array access *)",
+      "Bash(git push *)",
+      "Bash(git commit -m 'Bulletproof store + admin repair endpoint for corrupted data' -m '- readCol\\(\\) : safely handles non-array values \\(Jarvis broke clients KV\\) *)",
+      "Bash(git commit -m 'Auto-repair corrupted KV data on every read' -m 'readCol\\(\\) now writes the recovered array back to KV automatically. *)",
+      "Bash(git commit *)",
+      "Bash(git reset *)",
+      "Bash(grep -n \"{transition && \\(\\\\|return \\(\\\\|<\\\\/div>\\\\s*$\" /Users/titi/Desktop/nerixi-crm/src/components/Pipeline.js)",
+      "Bash(awk 'NR>=1560 && NR<=1620 {print NR\": \"$0}' /Users/titi/Desktop/nerixi-crm/src/app/page.js)",
+      "Bash(awk 'NR>=1620 && NR<=1660' /Users/titi/Desktop/nerixi-crm/src/app/page.js)"
+    ],
+    "additionalDirectories": [
+      "/tmp"
     ]
   }
 }

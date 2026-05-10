@@ -101,6 +101,98 @@ export function computeRevenue(client) {
   return (Number(client.installation) || 0) + (Number(client.mrr) || 0) * months
 }
 
+// MRR pour un mois donné (date = 1er du mois)
+function mrrAtMonth(clients, monthDate) {
+  const monthEnd = new Date(monthDate.getFullYear(), monthDate.getMonth() + 1, 0)
+  return clients
+    .filter(c => c?.dateDebut && new Date(c.dateDebut) <= monthEnd && c.statut !== 'churné')
+    .reduce((s, c) => s + (Number(c.mrr) || 0), 0)
+}
+
+// Compare le MRR du mois courant vs mois précédent et même mois N-1
+export function comparePeriods(clients) {
+  const today = new Date()
+  const thisMonth = new Date(today.getFullYear(), today.getMonth(), 1)
+  const lastMonth = new Date(today.getFullYear(), today.getMonth() - 1, 1)
+  const sameMonthLastYear = new Date(today.getFullYear() - 1, today.getMonth(), 1)
+  const cur = mrrAtMonth(clients, thisMonth)
+  const prev = mrrAtMonth(clients, lastMonth)
+  const prevYear = mrrAtMonth(clients, sameMonthLastYear)
+  const newClientsThisMonth = clients.filter(c => {
+    if (!c?.dateDebut) return false
+    const d = new Date(c.dateDebut)
+    return d.getFullYear() === thisMonth.getFullYear() && d.getMonth() === thisMonth.getMonth()
+  }).length
+  const newClientsLastMonth = clients.filter(c => {
+    if (!c?.dateDebut) return false
+    const d = new Date(c.dateDebut)
+    return d.getFullYear() === lastMonth.getFullYear() && d.getMonth() === lastMonth.getMonth()
+  }).length
+  return {
+    mrr: { cur, prev, prevYear, deltaMonth: cur - prev, deltaYear: cur - prevYear,
+           pctMonth: prev ? ((cur - prev) / prev) * 100 : 0,
+           pctYear: prevYear ? ((cur - prevYear) / prevYear) * 100 : 0 },
+    newClients: { cur: newClientsThisMonth, prev: newClientsLastMonth,
+                  delta: newClientsThisMonth - newClientsLastMonth }
+  }
+}
+
+// Sales velocity : durée moyenne entre création prospect et conversion en client signé
+export function computeSalesVelocity(prospects = [], clients = []) {
+  // Pour chaque client signé, on cherche le prospect d'origine via email/entreprise
+  const days = []
+  for (const c of clients) {
+    if (!c?.dateDebut || c.statut === 'prospect') continue
+    const startDate = new Date(c.dateDebut)
+    if (isNaN(startDate.getTime())) continue
+    // Cherche un prospect matché par email ou entreprise
+    const matched = prospects.find(p => p && (
+      (p.email && c.email && p.email.toLowerCase() === c.email.toLowerCase()) ||
+      (p.entreprise && c.entreprise && p.entreprise.toLowerCase() === c.entreprise.toLowerCase())
+    ))
+    if (matched?.createdAt) {
+      const created = new Date(matched.createdAt)
+      if (!isNaN(created.getTime())) {
+        const diff = Math.max(0, (startDate - created) / (1000 * 60 * 60 * 24))
+        days.push(diff)
+      }
+    }
+  }
+  if (days.length === 0) return { avg: 0, count: 0, min: 0, max: 0 }
+  const avg = days.reduce((a, b) => a + b, 0) / days.length
+  return {
+    avg: Math.round(avg),
+    count: days.length,
+    min: Math.round(Math.min(...days)),
+    max: Math.round(Math.max(...days)),
+  }
+}
+
+// Coût d'acquisition client : dépense / nb clients gagnés sur la période
+export function computeCAC(monthlySpending, clientsAcquiredThisMonth) {
+  const sp = Number(monthlySpending) || 0
+  const n = Number(clientsAcquiredThisMonth) || 0
+  if (n === 0) return null
+  return Math.round(sp / n)
+}
+
+// Win/Loss : agrégation des raisons depuis les prospects perdus
+export function aggregateLossReasons(prospects = []) {
+  const reasons = {}
+  let totalLost = 0
+  for (const p of prospects) {
+    if (p?.lost && p.lossReason) {
+      const r = p.lossReason.trim() || 'Non renseignée'
+      reasons[r] = (reasons[r] || 0) + 1
+      totalLost++
+    }
+  }
+  const sorted = Object.entries(reasons)
+    .map(([reason, count]) => ({ reason, count, pct: totalLost ? Math.round((count / totalLost) * 100) : 0 }))
+    .sort((a, b) => b.count - a.count)
+  return { total: totalLost, byReason: sorted }
+}
+
 // Cohort grid : rows = month of acquisition, cols = months since
 export function buildCohorts(clients, monthsBack = 6) {
   const today = new Date()

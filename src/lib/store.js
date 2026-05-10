@@ -68,6 +68,69 @@ function defaultEvents(clients) {
   return ev
 }
 
+// ───────── Concurrents (competitors) ─────────
+export async function getCompetitors() { return await readCol('competitors') }
+export async function saveCompetitor(input) {
+  const list = await readCol('competitors')
+  const isNew = !input.id
+  const id = input.id || `cmp_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`
+  const c = {
+    id,
+    name: input.name || 'Concurrent',
+    url: input.url || '',
+    region: input.region || 'Oise',
+    estimatedMRR: Number(input.estimatedMRR) || 0,
+    estimatedClients: Number(input.estimatedClients) || 0,
+    threatLevel: input.threatLevel || 'medium', // low / medium / high
+    notes: input.notes || '',
+    strengths: input.strengths || '',
+    weaknesses: input.weaknesses || '',
+    lastChecked: input.lastChecked || null,
+    lastSnapshot: input.lastSnapshot || null,
+    lastChange: input.lastChange || null,
+    createdAt: input.createdAt || new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  }
+  if (isNew) list.unshift(c)
+  else {
+    const idx = list.findIndex(x => x.id === id)
+    if (idx === -1) list.unshift(c); else list[idx] = c
+  }
+  await writeCol('competitors', list)
+  return c
+}
+export async function deleteCompetitor(id) {
+  const list = await readCol('competitors')
+  await writeCol('competitors', list.filter(c => c.id !== id))
+  return true
+}
+
+// ───────── Audit log ─────────
+export async function logAudit(entry) {
+  const list = (await kv.get(P + 'auditLog')) || []
+  const cleaned = Array.isArray(list) ? list : []
+  const e = {
+    id: `aud_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+    ts: new Date().toISOString(),
+    actor: entry.actor || 'system',
+    action: entry.action || 'unknown',
+    target: entry.target || null,
+    payload: entry.payload || null,
+    ip: entry.ip || null,
+    userAgent: entry.userAgent || null,
+    success: entry.success !== false,
+  }
+  cleaned.unshift(e)
+  // Garde les 2000 dernières actions
+  const trimmed = cleaned.length > 2000 ? cleaned.slice(0, 2000) : cleaned
+  await kv.set(P + 'auditLog', trimmed)
+  return e
+}
+export async function getAuditLog(limit = 200) {
+  const list = (await kv.get(P + 'auditLog')) || []
+  return Array.isArray(list) ? list.slice(0, limit) : []
+}
+
 // ───────── KV helpers ─────────
 async function readCol(name) { await ensureSeeded(); return (await kv.get(P + name)) || [] }
 async function writeCol(name, data) { await kv.set(P + name, data) }

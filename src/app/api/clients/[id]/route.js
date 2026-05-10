@@ -1,7 +1,7 @@
 import crypto from 'crypto'
 import { cookies } from 'next/headers'
 import { verifyToken, AUTH_COOKIE } from '@/lib/auth'
-import { getClient, updateClient, deleteClient } from '@/lib/store'
+import { getClient, updateClient, deleteClient, logAudit } from '@/lib/store'
 
 function requireAuth() {
   const token = cookies().get(AUTH_COOKIE)?.value
@@ -79,8 +79,19 @@ export async function PUT(request, { params }) {
   }
 }
 
-export async function DELETE(_req, { params }) {
+export async function DELETE(req, { params }) {
   if (!requireAuth()) return Response.json({ error: 'Unauthorized' }, { status: 401 })
+  const c = await getClient(params.id)
   const ok = await deleteClient(params.id)
+  try {
+    await logAudit({
+      actor: 'user',
+      action: 'client.delete',
+      target: { id: params.id, entreprise: c?.entreprise },
+      ip: req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || null,
+      userAgent: req.headers.get('user-agent') || null,
+      success: ok,
+    })
+  } catch {}
   return Response.json({ success: ok })
 }
