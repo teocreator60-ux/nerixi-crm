@@ -1072,7 +1072,8 @@ export default function Home() {
         padding: '22px 0',
         flexShrink: 0,
         backdropFilter: 'blur(8px)',
-        position: 'sticky', top: 0, height: '100vh'
+        position: 'sticky', top: 0, height: '100vh',
+        overflowY: 'auto'
       }}>
         <div style={{ padding: '4px 22px 18px', borderBottom: '1px solid var(--nerixi-border)', marginBottom: 14 }}>
           <img src="/logo-nerixi.jpg" alt="Nerixi" className="logo-breathe" style={{ width: '100%', maxWidth: 160, height: 'auto', display: 'block', marginBottom: 6 }} />
@@ -1158,7 +1159,7 @@ export default function Home() {
       </aside>
 
       {/* Main content */}
-      <main className="main-content page-transition" style={{ flex: '1 1 0%', padding: '24px 20px', overflowY: 'auto', overflowX: 'hidden', minWidth: 0, position: 'relative' }} key={activeTab}>
+      <main className="main-content page-transition" style={{ flex: '1 1 0%', padding: '24px 20px', overflowX: 'hidden', minWidth: 0, position: 'relative' }} key={activeTab}>
         {activeTab === 'Dashboard' && <AmbientBackground density={28} />}
         <div style={{ position: 'relative', zIndex: 1, width: '100%', minWidth: 0 }}>
 

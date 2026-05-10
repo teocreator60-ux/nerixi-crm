@@ -260,6 +260,9 @@ input, textarea, select {
   transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
   font-family: inherit;
 }
+@media (max-width: 860px) {
+  input, textarea, select { font-size: 16px; }
+}
 input:focus, textarea:focus, select:focus {
   border-color: var(--nerixi-green);
   box-shadow: 0 0 0 4px rgba(0, 200, 120, 0.12);
@@ -737,7 +740,8 @@ label {
     animation: fadeIn 0.25s ease;
   }
 
-  .main-content { padding: 70px 16px 24px !important; }
+  .main-content { padding: calc(70px + env(safe-area-inset-top)) 16px calc(24px + env(safe-area-inset-bottom)) !important; }
+  .mobile-toggle { top: calc(14px + env(safe-area-inset-top)); left: calc(14px + env(safe-area-inset-left)); }
 
   .grid-3 { grid-template-columns: 1fr 1fr !important; }
   .grid-4 { grid-template-columns: 1fr 1fr !important; }
