@@ -2225,3 +2225,139 @@ label {
   .print-page th, .print-page td { border: 1px solid #ddd; padding: 8px; text-align: left; }
 }
 
+
+/* ─────────────────────────────────────────────────────────── */
+/* Dashboard preview (derrière la page de login)               */
+/* ─────────────────────────────────────────────────────────── */
+.dashpv-shell {
+  position: fixed; inset: 0;
+  display: flex;
+  background: var(--nerixi-bg);
+  background-image:
+    radial-gradient(at 12% 8%, rgba(0, 232, 154, 0.08) 0, transparent 45%),
+    radial-gradient(at 88% 92%, rgba(54, 230, 196, 0.06) 0, transparent 50%);
+  pointer-events: none;
+  user-select: none;
+  z-index: 0;
+}
+.dashpv-sidebar {
+  width: 230px;
+  background: linear-gradient(180deg, rgba(17,31,56,0.95), rgba(10,22,40,0.95));
+  border-right: 1px solid var(--nerixi-border);
+  display: flex; flex-direction: column;
+  padding: 22px 0;
+  flex-shrink: 0;
+}
+.dashpv-logo { padding: 4px 22px 18px; border-bottom: 1px solid var(--nerixi-border); margin-bottom: 14px; }
+.dashpv-logo-img {
+  width: 100%; max-width: 160px; height: 50px;
+  background: linear-gradient(135deg, #00c878, #36e6c4);
+  border-radius: 10px;
+  display: block;
+  margin-bottom: 6px;
+  filter: blur(2px);
+  opacity: 0.7;
+}
+.dashpv-logo-sub { font-size: 10.5px; color: var(--nerixi-muted); text-transform: uppercase; letter-spacing: 1.5px; font-weight: 600; }
+.dashpv-tabs { display: flex; flex-direction: column; padding: 0 10px; }
+.dashpv-tab {
+  display: flex; align-items: center; gap: 10px;
+  padding: 9px 12px;
+  margin: 2px 0;
+  border-radius: 10px;
+  color: var(--nerixi-muted);
+  font-size: 13.5px;
+  font-weight: 500;
+}
+.dashpv-tab.is-active {
+  background: rgba(0,200,120,0.12);
+  color: var(--nerixi-accent);
+  font-weight: 700;
+}
+.dashpv-user {
+  margin-top: auto;
+  padding: 14px 16px 0;
+  border-top: 1px solid var(--nerixi-border);
+  display: flex; align-items: center; gap: 10px;
+}
+.dashpv-avatar {
+  width: 34px; height: 34px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #00c878, #36e6c4);
+  display: flex; align-items: center; justify-content: center;
+  color: #06101f; font-weight: 800;
+}
+.dashpv-user-info { flex: 1; min-width: 0; }
+.dashpv-user-name { font-size: 13px; font-weight: 700; color: var(--nerixi-text); }
+.dashpv-user-email { font-size: 10.5px; color: var(--nerixi-muted); }
+
+.dashpv-main { flex: 1; padding: 24px 28px; overflow: hidden; }
+.dashpv-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 24px; gap: 14px; flex-wrap: wrap; }
+.dashpv-h1 {
+  font-size: 28px; font-weight: 800; letter-spacing: -0.5px;
+  background: linear-gradient(135deg, #00c878, #36e6c4);
+  -webkit-background-clip: text; background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.dashpv-subtitle { color: var(--nerixi-muted); margin-top: 6px; font-size: 13px; }
+.dashpv-actions { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.dashpv-pill { padding: 6px 12px; border-radius: 999px; background: rgba(0,200,120,0.12); color: var(--nerixi-accent); font-size: 12px; font-weight: 600; }
+.dashpv-btn { padding: 8px 14px; border-radius: 10px; background: rgba(10,22,40,0.6); border: 1px solid var(--nerixi-border); color: var(--nerixi-muted); font-size: 12.5px; font-weight: 600; }
+.dashpv-btn-primary { background: linear-gradient(135deg, #00c878, #36e6c4); color: #06101f; }
+
+.dashpv-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 14px;
+  margin-bottom: 22px;
+}
+.dashpv-card {
+  background: var(--nerixi-card);
+  border: 1px solid var(--nerixi-border);
+  border-radius: 14px;
+  padding: 18px;
+}
+.dashpv-card-head { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+.dashpv-card-label { font-size: 11.5px; color: var(--nerixi-muted); text-transform: uppercase; letter-spacing: 0.6px; font-weight: 700; }
+.dashpv-card-value {
+  font-size: 28px; font-weight: 800;
+  color: var(--nerixi-text);
+  letter-spacing: -0.5px;
+  margin-top: 4px;
+}
+.dashpv-card-sub { font-size: 11.5px; color: var(--nerixi-muted); margin-top: 4px; }
+.dashpv-chart-card {
+  background: var(--nerixi-card);
+  border: 1px solid var(--nerixi-border);
+  border-radius: 14px;
+  padding: 18px;
+  margin-bottom: 22px;
+}
+.dashpv-chart-wrap { width: 100%; }
+.dashpv-chart-svg { width: 100%; height: 200px; display: block; }
+.dashpv-grid-2 {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 14px;
+}
+
+/* Floutages */
+.blur-strong { filter: blur(10px); }
+.blur-medium { filter: blur(5px); }
+
+/* ─── Login overlay : glassmorphism vert ─── */
+.login-overlay {
+  position: fixed; inset: 0;
+  z-index: 50;
+  display: flex; align-items: center; justify-content: center;
+  padding: 24px;
+  background: linear-gradient(135deg, rgba(0, 200, 120, 0.18), rgba(54, 230, 196, 0.10) 50%, rgba(10, 22, 40, 0.45));
+  backdrop-filter: blur(16px) saturate(140%);
+  -webkit-backdrop-filter: blur(16px) saturate(140%);
+}
+
+@media (max-width: 860px) {
+  .dashpv-sidebar { display: none; }
+  .dashpv-main { padding: 16px; }
+  .dashpv-h1 { font-size: 22px; }
+}

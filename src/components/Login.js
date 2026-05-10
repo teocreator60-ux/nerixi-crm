@@ -1,5 +1,6 @@
 'use client'
 import { useState, useEffect } from 'react'
+import DashboardPreview from './DashboardPreview'
 
 export function useAuth() {
   const [authed, setAuthed] = useState(null)
@@ -56,11 +57,9 @@ export default function Login({ onLogin }) {
   }
 
   return (
-    <div style={{ position: 'relative', minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
-      <div className="login-bg">
-        <div className="login-grid" />
-      </div>
-
+    <>
+      <DashboardPreview />
+      <div className="login-overlay">
       <div className="login-card" style={{ position: 'relative', zIndex: 2 }}>
         <div className="login-orb">N</div>
 
@@ -129,6 +128,7 @@ export default function Login({ onLogin }) {
           Accès réservé · Téo · Nerixi © {new Date().getFullYear()}
         </p>
       </div>
-    </div>
+      </div>
+    </>
   )
 }
